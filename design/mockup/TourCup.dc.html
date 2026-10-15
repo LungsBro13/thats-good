@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>That's Good: Autumn Cup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0B0B}
+a{color:#9BDA6E}a:hover{color:#BDE89A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #0A0B0B; color: #F2F4F3; font-family: 'Archivo', system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow: hidden">
+<main style="flex: 1; overflow-y: auto; padding: 48px 20px 24px; display: flex; flex-direction: column; gap: 18px">
+
+<a href="Friends.dc.html" style="display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; font-weight: 600; text-decoration: none; color: #B4BBB8; align-self: flex-start">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>Friends</a>
+
+<section style="display: flex; flex-direction: column; gap: 14px; margin-top: -8px; padding-bottom: 18px; border-bottom: 1px solid #262A29">
+<div>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #9BDA6E"><span style="width: 7px; height: 7px; border-radius: 4px; background: #9BDA6E"></span>LIVE · SINGLES</div>
+<h1 style="margin: 4px 0 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Autumn Cup</h1>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end">
+<div>
+<div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #6FA8DC">TEAM BLUE</div>
+<div style="font-size: 56px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: #6FA8DC">7½</div>
+</div>
+<div style="text-align: center; padding-bottom: 8px"><div style="font-size: 12px; color: #8E9693">8½ to win</div><div style="font-size: 12px; color: #8E9693">of 16</div></div>
+<div style="text-align: right">
+<div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #F0915A">TEAM ORANGE</div>
+<div style="font-size: 56px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: #F0915A">5½</div>
+</div>
+</div>
+<div style="position: relative; display: flex; height: 8px; border-radius: 2px; overflow: hidden; background: #262A29" role="img" aria-label="Blue 7.5 points, 3 matches live, Orange 5.5 points">
+<span style="display: block; width: 46.875%; background: #6FA8DC"></span>
+<span style="display: block; width: 18.75%; background: #3A403E"></span>
+<span style="display: block; width: 34.375%; background: #F0915A"></span>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #8E9693">
+<span>3 matches on the course</span>
+<span>Projected <span style="color: #6FA8DC; font-weight: 600">9</span> – <span style="color: #F0915A; font-weight: 600">7</span></span>
+</div>
+</section>
+
+<div role="group" aria-label="Session" style="display: flex; gap: 20px; border-bottom: 1px solid #262A29">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button style="{{t.style}}" onClick="{{t.pick}}" aria-pressed="{{t.pressed}}">{{t.label}} <span style="font-weight: 500; color: #8E9693">{{t.score}}</span></button>
+</sc-for>
+</div>
+
+<section style="display: flex; flex-direction: column">
+<sc-for list="{{matches}}" as="m" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr); gap: 8px; align-items: center; min-height: 60px; border-bottom: 1px solid #1A1D1C">
+<span style="display: flex; align-items: center; gap: 8px; min-width: 0"><span style="width: 3px; align-self: stretch; margin: 12px 0; background: #6FA8DC; border-radius: 2px; flex-shrink: 0"></span><span style="{{m.blueStyle}}">{{m.blue}}</span></span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 3px">
+<span style="{{m.chipStyle}}">{{m.status}}</span>
+<span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #8E9693">{{m.sub}}</span>
+</span>
+<span style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0"><span style="{{m.orangeStyle}}">{{m.orange}}</span><span style="width: 3px; align-self: stretch; margin: 12px 0; background: #F0915A; border-radius: 2px; flex-shrink: 0"></span></span>
+</div>
+</sc-for>
+</section>
+</main>
+
+<nav aria-label="Main" style="height: 84px; flex-shrink: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #262A29; background: #0A0B0B">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="Friends.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid #9BDA6E; text-decoration: none; color: #F2F4F3; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.7 3 2.4 3.5 5.2"></path></svg>Friends</a>
+<a href="Hole.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V3"></path><path d="M6 4h11l-3 4 3 4H6"></path></svg>Play</a>
+<a href="Stats.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M11 20V4M17 20v-7M2 20h20"></path></svg>Stats</a>
+<a href="#bag" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h10l-1 13H8z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg>Bag</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { session: 'singles' };
+}
+renderVals() {
+var self = this;
+var session = this.state.session;
+// [blue, orange, winner B/O/H, status, live, thru]
+var data = {
+fourball: { label: 'Fourballs', score: '2½–1½', m: [
+['You & Tom', 'Dave & Sam', 'B', '3&2'], ['Jack & Ollie', 'Chris & Luke', 'O', '2&1'],
+['Ben & Rob', 'Harry & Alex', 'H', 'AS'], ['Matt & Will', 'James & Dan', 'B', '1 UP']] },
+foursomes: { label: 'Foursomes', score: '2–2', m: [
+['You & Jack', 'Dave & Chris', 'O', '4&3'], ['Tom & Ben', 'Sam & Luke', 'B', '2&1'],
+['Ollie & Matt', 'Harry & James', 'O', '1 UP'], ['Rob & Will', 'Alex & Dan', 'B', '3&1']] },
+singles: { label: 'Singles', score: '3–2', m: [
+['You', 'Dave', 'B', '1 UP', true, 14], ['Tom', 'Sam', 'B', '2&1'], ['Jack', 'Chris', 'O', '3&2'],
+['Ben', 'Luke', 'H', 'AS', true, 15], ['Ollie', 'Harry', 'O', '2 UP', true, 13], ['Rob', 'Alex', 'B', '4&3'],
+['Matt', 'James', 'O', '1 UP'], ['Will', 'Dan', 'B', '2&1']] }
+};
+var color = { B: '#6FA8DC', O: '#F0915A', H: '#5B6360' };
+var chipBase = 'min-width: 64px; box-sizing: border-box; text-align: center; padding: 5px 8px; border-radius: 4px; font-size: 13px; font-weight: 700; ';
+var nameBase = 'font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ';
+var matches = data[session].m.map(function (x) {
+var live = !!x[4];
+var w = x[2];
+var chip = live
+? chipBase + 'background: transparent; border: 1.5px solid ' + color[w] + '; color: ' + (w === 'H' ? '#F2F4F3' : color[w])
+: chipBase + 'border: 1.5px solid ' + color[w] + '; background: ' + color[w] + '; color: ' + (w === 'H' ? '#F2F4F3' : '#0A0B0B');
+return {
+blue: x[0], orange: x[1], status: x[3], chipStyle: chip,
+sub: live ? 'LIVE · THRU ' + x[5] : (w === 'H' ? 'HALVED' : 'FINAL'),
+blueStyle: nameBase + (w === 'B' ? 'font-weight: 700' : 'font-weight: 500; color: #B4BBB8'),
+orangeStyle: nameBase + 'text-align: right; ' + (w === 'O' ? 'font-weight: 700' : 'font-weight: 500; color: #B4BBB8')
+};
+});
+var tabBase = 'flex-shrink: 0; min-height: 44px; padding: 0; margin-bottom: -1px; background: transparent; border: none; border-bottom: 2px solid; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ';
+var tabs = ['fourball', 'foursomes', 'singles'].map(function (k) {
+var on = k === session;
+return { label: data[k].label, score: data[k].score, pressed: on ? 'true' : 'false', style: tabBase + (on ? 'color: #F2F4F3; border-bottom-color: #9BDA6E' : 'color: #8E9693; border-bottom-color: transparent'), pick: function () { self.setState({ session: k }); } };
+});
+return { tabs: tabs, matches: matches };
+}
+}
+</script>
+</body>
+</html>

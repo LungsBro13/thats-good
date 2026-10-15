@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>That's Good: Club Championship</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0B0B}
+a{color:#9BDA6E}a:hover{color:#BDE89A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #0A0B0B; color: #F2F4F3; font-family: 'Archivo', system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow: hidden">
+<main style="flex: 1; overflow-y: auto; padding: 48px 20px 24px; display: flex; flex-direction: column; gap: 18px">
+
+<a href="Friends.dc.html" style="display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; font-weight: 600; text-decoration: none; color: #B4BBB8; align-self: flex-start">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>Friends</a>
+
+<div style="margin-top: -8px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #9BDA6E"><span style="width: 7px; height: 7px; border-radius: 4px; background: #9BDA6E"></span>LIVE · ROUND 2 OF 2</div>
+<h1 style="margin: 4px 0 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Club Championship</h1>
+<div style="font-size: 13px; color: #8E9693">Stroke play · 10 players · 95% handicap allowance</div>
+</div>
+
+<div role="group" aria-label="Leaderboard type" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid #262A29; border-radius: 8px; overflow: hidden">
+<sc-for list="{{bases}}" as="b" hint-placeholder-count="2">
+<button style="{{b.style}}" onClick="{{b.pick}}" aria-pressed="{{b.pressed}}">{{b.label}}</button>
+</sc-for>
+</div>
+
+<section style="display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: 34px minmax(0, 1fr) 46px 34px 46px; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: #8E9693; padding-bottom: 8px; border-bottom: 1px solid #262A29">
+<span>POS</span><span>PLAYER</span><span style="text-align: right">TODAY</span><span style="text-align: right">THRU</span><span style="text-align: right">TOTAL</span>
+</div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+<div style="{{r.rowStyle}}">
+<span style="font-weight: 600; color: #B4BBB8">{{r.pos}}</span>
+<span style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-weight: 600; font-size: 15px">{{r.name}} <span style="{{r.moveStyle}}">{{r.move}}</span></span>
+<span style="font-size: 11px; color: #8E9693">HCP {{r.hcp}}</span>
+</span>
+<span style="text-align: right; color: #B4BBB8">{{r.today}}</span>
+<span style="text-align: right; color: #8E9693">{{r.thru}}</span>
+<span style="{{r.totalStyle}}">{{r.total}}</span>
+</div>
+</sc-for>
+</section>
+
+<section style="display: flex; flex-direction: column">
+<h2 style="margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8E9693">Live feed</h2>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1A1D1C; font-size: 14px"><span><span style="font-weight: 600">Tom</span> <span style="color: #B4BBB8">birdie on 14, takes a 1 shot lead</span></span><span style="font-size: 12px; color: #8E9693; flex-shrink: 0">2m</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1A1D1C; font-size: 14px"><span><span style="font-weight: 600">Ben</span> <span style="color: #B4BBB8">bogey on 16</span></span><span style="font-size: 12px; color: #8E9693; flex-shrink: 0">6m</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 14px"><span><span style="font-weight: 600">You</span> <span style="color: #B4BBB8">finished with 73, round 2</span></span><span style="font-size: 12px; color: #8E9693; flex-shrink: 0">14m</span></div>
+</section>
+</main>
+
+<nav aria-label="Main" style="height: 84px; flex-shrink: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #262A29; background: #0A0B0B">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="Friends.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid #9BDA6E; text-decoration: none; color: #F2F4F3; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.7 3 2.4 3.5 5.2"></path></svg>Friends</a>
+<a href="Hole.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V3"></path><path d="M6 4h11l-3 4 3 4H6"></path></svg>Play</a>
+<a href="Stats.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M11 20V4M17 20v-7M2 20h20"></path></svg>Stats</a>
+<a href="#bag" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h10l-1 13H8z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg>Bag</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { basis: 'gross' };
+}
+renderVals() {
+var self = this;
+var basis = this.state.basis;
+var players = [
+['Tom', 4.8, 73, -1, 14], ['You', 7.2, 75, 1, 18], ['Dave', 9.0, 78, 2, 12], ['Jack', 11.4, 82, 3, 15], ['Sam', 14.7, 85, 5, 13],
+['Ollie', 20.1, 92, 9, 11], ['Ben', 3.1, 71, 2, 16], ['Chris', 6.0, 76, 0, 18], ['Luke', 12.8, 84, 4, 17], ['Harry', 16.5, 88, 6, 12]
+];
+var rows = players.map(function (p) {
+var ph = Math.round(p[1] * 0.95);
+var r1 = p[2] - 72, today = p[3];
+if (basis === 'net') { r1 -= ph; today -= Math.round(ph * p[4] / 18); }
+return { name: p[0], hcp: p[1].toFixed(1), r1: r1, today: today, total: r1 + today, thru: p[4] === 18 ? 'F' : String(p[4]) };
+});
+var rank = function (list, key) {
+var sorted = list.slice().sort(function (a, b) { return a[key] - b[key]; });
+var pos = {};
+sorted.forEach(function (r, i) {
+var first = sorted.findIndex(function (x) { return x[key] === r[key]; });
+var tied = sorted.filter(function (x) { return x[key] === r[key]; }).length > 1;
+pos[r.name] = { n: first + 1, label: (tied ? 'T' : '') + (first + 1) };
+});
+return { sorted: sorted, pos: pos };
+};
+var before = rank(rows, 'r1').pos;
+var now = rank(rows, 'total');
+var par = function (v) { return v === 0 ? 'E' : (v > 0 ? '+' + v : '−' + Math.abs(v)); };
+var out = now.sorted.map(function (r) {
+var mv = before[r.name].n - now.pos[r.name].n;
+var me = r.name === 'You';
+return {
+pos: now.pos[r.name].label, name: r.name, hcp: r.hcp, today: par(r.today), thru: r.thru, total: par(r.total),
+move: mv > 0 ? '↑' + mv : mv < 0 ? '↓' + Math.abs(mv) : '',
+moveStyle: 'font-size: 11px; font-weight: 600; color: ' + (mv > 0 ? '#9BDA6E' : '#F0915A'),
+totalStyle: 'text-align: right; font-weight: 700; font-size: 16px; color: ' + (r.total < 0 ? '#9BDA6E' : '#F2F4F3'),
+rowStyle: 'display: grid; grid-template-columns: 34px minmax(0, 1fr) 46px 34px 46px; gap: 6px; align-items: center; min-height: 52px; border-bottom: 1px solid #1A1D1C; font-size: 14px;' + (me ? ' background: #131515; margin: 0 -20px; padding: 0 20px;' : '')
+};
+});
+var segBase = 'min-height: 40px; border: none; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ';
+var bases = [['gross', 'Gross'], ['net', 'Net']].map(function (b) {
+var on = b[0] === basis;
+return { label: b[1], pressed: on ? 'true' : 'false', style: segBase + (on ? 'background: #F2F4F3; color: #0A0B0B' : 'background: transparent; color: #8E9693'), pick: function () { self.setState({ basis: b[0] }); } };
+});
+return { rows: out, bases: bases };
+}
+}
+</script>
+</body>
+</html>

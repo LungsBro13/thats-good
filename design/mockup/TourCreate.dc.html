@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>That's Good: New tournament</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0B0B}
+a{color:#9BDA6E}a:hover{color:#BDE89A}
+input::placeholder{color:#8E9693}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #0A0B0B; color: #F2F4F3; font-family: 'Archivo', system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow: hidden">
+<main style="flex: 1; overflow-y: auto; padding: 48px 20px 24px; display: flex; flex-direction: column; gap: 20px">
+
+<a href="Friends.dc.html" style="display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; font-weight: 600; text-decoration: none; color: #B4BBB8; align-self: flex-start">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>Friends</a>
+
+<h1 style="margin: -8px 0 0; font-size: 30px; font-weight: 600; letter-spacing: -0.02em">New tournament</h1>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="tname" style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8E9693">Name</label>
+<input id="tname" type="text" placeholder="e.g. Autumn Cup 2026" style="min-height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 8px; border: 1px solid #262A29; background: #131515; color: #F2F4F3; font-family: inherit; font-size: 16px">
+</div>
+
+<sc-for list="{{segRows}}" as="row" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8E9693">{{row.label}}</div>
+<div role="group" aria-label="{{row.label}}" style="display: flex; border: 1px solid #262A29; border-radius: 8px; overflow: hidden">
+<sc-for list="{{row.options}}" as="o" hint-placeholder-count="3">
+<button style="{{o.style}}" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}">{{o.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{row.hasNote}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; color: #8E9693; line-height: 1.4">{{row.note}}</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-if value="{{showSessions}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8E9693">Sessions</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{sessions}}" as="s" hint-placeholder-count="3">
+<button style="{{s.style}}" onClick="{{s.toggle}}" aria-pressed="{{s.pressed}}">{{s.label}}</button>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px">
+<div style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid #262A29; border-radius: 8px"><span style="width: 10px; height: 10px; border-radius: 5px; background: #6FA8DC"></span><span style="font-weight: 600">Team Blue</span></div>
+<div style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid #262A29; border-radius: 8px"><span style="width: 10px; height: 10px; border-radius: 5px; background: #F0915A"></span><span style="font-weight: 600">Team Orange</span></div>
+</div>
+</div>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #262A29; border-bottom: 1px solid #262A29">
+<sc-for list="{{steppers}}" as="s" hint-placeholder-count="2">
+<div style="{{s.cellStyle}}">
+<div style="font-size: 11px; color: #8E9693; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">{{s.label}}</div>
+<div style="display: flex; align-items: center; justify-content: space-between">
+<button aria-label="{{s.decLabel}}" onClick="{{s.dec}}" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid #262A29; background: transparent; color: #F2F4F3; font-size: 20px; font-family: inherit; cursor: pointer">−</button>
+<span style="font-size: 28px; font-weight: 600">{{s.value}}</span>
+<button aria-label="{{s.incLabel}}" onClick="{{s.inc}}" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid #262A29; background: transparent; color: #F2F4F3; font-size: 20px; font-family: inherit; cursor: pointer">+</button>
+</div>
+</div>
+</sc-for>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 10px; background: #131515">
+<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #9BDA6E">SUMMARY</div>
+<div style="font-size: 16px; font-weight: 600; line-height: 1.35">{{summary}}</div>
+<div style="font-size: 13px; color: #B4BBB8; line-height: 1.4">Handicaps: {{allowance}}</div>
+<div style="font-size: 13px; color: #B4BBB8; line-height: 1.4">Live scoring: one person per group enters scores and everyone sees the leaderboard update.</div>
+</section>
+
+<button style="min-height: 52px; border-radius: 10px; border: none; background: #F2F4F3; color: #0A0B0B; font-family: inherit; font-weight: 600; font-size: 16px; cursor: pointer">Create and share invite link</button>
+</main>
+
+<nav aria-label="Main" style="height: 84px; flex-shrink: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #262A29; background: #0A0B0B">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="Friends.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid #9BDA6E; text-decoration: none; color: #F2F4F3; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.7 3 2.4 3.5 5.2"></path></svg>Friends</a>
+<a href="Hole.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V3"></path><path d="M6 4h11l-3 4 3 4H6"></path></svg>Play</a>
+<a href="Stats.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M11 20V4M17 20v-7M2 20h20"></path></svg>Stats</a>
+<a href="#bag" style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #858D8A; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h10l-1 13H8z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg>Bag</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { format: 'match', teams: 'teams', pairFmt: 'fourball', teamStroke: 'best2', basis: 'net', players: 16, rounds: 1, fourball: true, foursomes: true, singles: true };
+}
+renderVals() {
+var self = this;
+var s = this.state;
+var segBase = 'flex: 1; min-height: 44px; padding: 0 6px; border: none; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ';
+var seg = function (on) { return segBase + (on ? 'background: #F2F4F3; color: #0A0B0B' : 'background: transparent; color: #8E9693'); };
+var row = function (label, key, opts, note) {
+return {
+label: label, note: note || '', hasNote: !!note,
+options: opts.map(function (o) {
+var on = s[key] === o[0];
+return { label: o[1], style: seg(on), pressed: on ? 'true' : 'false', pick: function () { var u = {}; u[key] = o[0]; self.setState(u); } };
+})
+};
+};
+var half = function (x) { var w = Math.floor(x); var h = x - w > 0; return (w === 0 && h) ? '½' : w + (h ? '½' : ''); };
+var segRows = [
+row('Scoring', 'format', [['stroke', 'Stroke play'], ['match', 'Match play']]),
+row('Who plays', 'teams', [['solo', 'Individual'], ['pairs', 'Pairs'], ['teams', 'Two teams']])
+];
+if (s.teams === 'pairs') {
+segRows.push(row('Pairs format', 'pairFmt', [['fourball', 'Fourball'], ['foursomes', 'Foursomes'], ['scramble', 'Scramble']],
+s.pairFmt === 'fourball' ? 'Both play their own ball, best score on each hole counts.' : s.pairFmt === 'foursomes' ? 'One ball per pair, taking turns.' : 'Both tee off, pick the best shot, both play from there.'));
+}
+if (s.teams === 'teams' && s.format === 'stroke') {
+segRows.push(row('Team score', 'teamStroke', [['best2', 'Best 2 per hole'], ['all', 'All scores count']]));
+}
+segRows.push(row('Handicaps', 'basis', [['net', 'Net'], ['gross', 'Gross']]));
+
+var n = s.players;
+var perTeam = Math.floor(n / 2);
+var summary, allowance;
+var gross = s.basis === 'gross';
+if (s.teams === 'solo') {
+if (s.format === 'stroke') {
+summary = n + ' players · ' + s.rounds + (s.rounds > 1 ? ' rounds' : ' round') + ' · live ' + s.basis + ' leaderboard';
+allowance = gross ? 'off scratch, no strokes' : '95% of course handicap';
+} else {
+var r = Math.ceil(Math.log(n) / Math.log(2));
+var byes = Math.pow(2, r) - n;
+summary = n + ' players · knockout bracket · ' + r + ' rounds' + (byes ? ' · ' + byes + (byes > 1 ? ' byes' : ' bye') : '');
+allowance = gross ? 'off scratch, no strokes' : '100% of the difference';
+}
+} else if (s.teams === 'pairs') {
+var fmtName = { fourball: 'fourball', foursomes: 'foursomes', scramble: 'scramble' }[s.pairFmt];
+summary = perTeam + ' pairs · ' + fmtName + ' ' + (s.format === 'stroke' ? 'stroke play · live leaderboard' : 'match play · knockout bracket');
+var allow = { fourball: s.format === 'stroke' ? '85% each player' : '90% each player', foursomes: '50% of the pair’s combined handicap', scramble: '35% of the lower, 15% of the higher' };
+allowance = gross ? 'off scratch, no strokes' : allow[s.pairFmt];
+} else if (s.format === 'match') {
+var pts = 0, parts = [];
+if (s.fourball) { pts += Math.floor(perTeam / 2); parts.push('fourballs'); }
+if (s.foursomes) { pts += Math.floor(perTeam / 2); parts.push('foursomes'); }
+if (s.singles) { pts += perTeam; parts.push('singles'); }
+summary = '2 teams of ' + perTeam + ' · ' + (parts.length ? parts.join(', ') : 'pick a session') + ' · ' + pts + ' points, ' + half(pts / 2 + 0.5) + ' to win';
+allowance = gross ? 'off scratch, no strokes' : 'fourballs 90%, foursomes 50% combined, singles 100% of the difference';
+} else {
+summary = '2 teams of ' + perTeam + ' · ' + (s.teamStroke === 'best2' ? 'best 2 net scores per hole' : 'every score counts') + ' · ' + s.rounds + (s.rounds > 1 ? ' rounds' : ' round');
+allowance = gross ? 'off scratch, no strokes' : '95% of course handicap';
+}
+
+var chipBase = 'min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ';
+var sessions = [['fourball', 'Fourballs'], ['foursomes', 'Foursomes'], ['singles', 'Singles']].map(function (x) {
+var on = s[x[0]];
+return { label: x[1], pressed: on ? 'true' : 'false', style: chipBase + (on ? 'background: #F2F4F3; color: #0A0B0B; border-color: #F2F4F3' : 'background: transparent; color: #8E9693; border-color: #262A29'), toggle: function () { var u = {}; u[x[0]] = !s[x[0]]; self.setState(u); } };
+});
+var stepper = function (i, label, key, min, max, step) {
+return {
+label: label, value: s[key], decLabel: 'Decrease ' + label, incLabel: 'Increase ' + label,
+cellStyle: 'padding: 12px ' + (i === 0 ? '12px 12px 0' : '0 12px 12px') + '; display: flex; flex-direction: column; gap: 6px;' + (i === 1 ? ' border-left: 1px solid #262A29;' : ''),
+dec: function () { var u = {}; u[key] = Math.max(min, s[key] - step); self.setState(u); },
+inc: function () { var u = {}; u[key] = Math.min(max, s[key] + step); self.setState(u); }
+};
+};
+return {
+segRows: segRows,
+showSessions: s.teams === 'teams' && s.format === 'match',
+sessions: sessions,
+steppers: [stepper(0, 'Players', 'players', 4, 72, 2), stepper(1, 'Rounds', 'rounds', 1, 4, 1)],
+summary: summary,
+allowance: allowance
+};
+}
+}
+</script>
+</body>
+</html>
