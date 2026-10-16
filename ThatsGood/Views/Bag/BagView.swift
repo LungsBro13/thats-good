@@ -108,7 +108,11 @@ struct BagView: View {
             .navigationTitle("Bag")
             .navigationDestination(isPresented: $openImport) { ImportScoresView() }
             #if DEBUG
-            .onAppear { if ProcessInfo.processInfo.arguments.contains("-importSample") { openImport = true } }
+            .onAppear {
+                let args = ProcessInfo.processInfo.arguments
+                if args.contains("-importSample") { openImport = true }
+                if args.contains("-catalogDemo") { addingCourse = true }
+            }
             #endif
             .sheet(item: $editingCourse) { course in
                 CourseEditorView(course: course)
