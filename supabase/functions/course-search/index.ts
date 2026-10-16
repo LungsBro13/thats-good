@@ -19,7 +19,7 @@ export type CatalogTee = {
   holes: CatalogHole[];
 };
 export type CatalogCourse = {
-  id: number;
+  id: string;
   club: string;
   course: string;
   city: string | null;
@@ -37,8 +37,9 @@ const text = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
 /** Turns one GolfCourseAPI course into the small shape the app reads. */
 export function normalizeCourse(raw: any): CatalogCourse | null {
-  const id = num(raw?.id);
-  if (id === null) return null;
+  // GolfCourseAPI ids can be numbers or text: keep them as text.
+  const id = typeof raw?.id === "number" ? String(raw.id) : text(raw?.id);
+  if (!id) return null;
   const loc = raw?.location ?? {};
   const tees: CatalogTee[] = [];
   for (const gender of ["male", "female"] as const) {
@@ -121,10 +122,10 @@ async function golfApi(path: string, key: string): Promise<any> {
   return res.json();
 }
 
-async function byId(id: number, key: string): Promise<CatalogCourse[]> {
-  const cached = await db(`course_catalog?id=eq.${id}&select=data,fetched_at`);
+async function byId(id: string, key: string): Promise<CatalogCourse[]> {
+  const cached = await db(`course_catalog?id=eq.${encodeURIComponent(id)}&select=data,fetched_at`);
   if (Array.isArray(cached) && cached[0] && fresh(cached[0].fetched_at)) return [cached[0].data];
-  const body = await golfApi(`/courses/${id}`, key);
+  const body = await golfApi(`/courses/${encodeURIComponent(id)}`, key);
   const course = normalizeCourse(body?.course ?? body);
   if (!course) return [];
   await remember([course]);
@@ -136,8 +137,9 @@ async function search(query: string, key: string): Promise<CatalogCourse[]> {
   const hit = await db(`course_search_cache?query=eq.${encodeURIComponent(q)}&select=ids,fetched_at`);
   // Only searches that found something are cached; empty ones are asked again next time.
   if (Array.isArray(hit) && hit[0] && fresh(hit[0].fetched_at) && (hit[0].ids ?? []).length > 0) {
-    const ids: number[] = hit[0].ids;
-    const rows = await db(`course_catalog?id=in.(${ids.join(",")})&select=data`);
+    const ids: string[] = hit[0].ids;
+    const list = ids.map((i) => `"${i.replace(/"/g, "")}"`).join(",");
+    const rows = await db(`course_catalog?id=in.(${encodeURIComponent(list)})&select=data`);
     if (Array.isArray(rows) && rows.length === ids.length) {
       const byKey = new Map(rows.map((r: any) => [r.data.id, r.data]));
       return ids.map((i) => byKey.get(i)).filter(Boolean) as CatalogCourse[];
@@ -176,8 +178,8 @@ export async function handler(req: Request): Promise<Response> {
   if (!key) return json({ error: "Course search isn't set up: add the GOLFCOURSEAPI_KEY secret in Supabase." }, 500);
   try {
     const body = await req.json().catch(() => ({}));
-    const id = num(body?.id);
-    if (id !== null) return json({ courses: await byId(id, key) });
+    const id = typeof body?.id === "number" ? String(body.id) : text(body?.id);
+    if (id) return json({ courses: await byId(id, key) });
     const query = text(body?.query);
     if (query.length < 3 || query.length > 60) return json({ error: "Type at least 3 letters of the course name." }, 400);
     return json({ courses: await search(query, key) });

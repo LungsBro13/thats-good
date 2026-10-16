@@ -15,7 +15,7 @@ struct CourseEditorView: View {
     @State private var geoData: Data?
     @State private var mapStatus: String?
     @State private var loadingMap = false
-    @State private var catalogID: Int?
+    @State private var catalogID: String?
     @State private var center: GeoPoint?
     @State private var query = ""
     @State private var results: [CatalogCourse] = []
@@ -33,7 +33,7 @@ struct CourseEditorView: View {
         _holes = State(initialValue: course?.holes.sorted { $0.number < $1.number }
                        ?? (1...18).map { CourseHole(number: $0, par: 4, strokeIndex: $0, yards: 0) })
         _geoData = State(initialValue: course?.geoData)
-        _catalogID = State(initialValue: course?.catalogID)
+        _catalogID = State(initialValue: course?.catalogKey)
         _center = State(initialValue: course.flatMap { c in c.centerLat.flatMap { lat in c.centerLon.map { GeoPoint(lat: lat, lon: $0) } } })
     }
 
@@ -125,13 +125,13 @@ struct CourseEditorView: View {
             course.slope = slope
             course.holes = holes
             course.geoData = geoData
-            course.catalogID = catalogID
+            course.catalogKey = catalogID
             course.centerLat = center?.lat
             course.centerLon = center?.lon
         } else {
             let newCourse = Course(name: cleanName, teeName: teeName, courseRating: rating, slope: slope, holes: holes)
             newCourse.geoData = geoData
-            newCourse.catalogID = catalogID
+            newCourse.catalogKey = catalogID
             newCourse.centerLat = center?.lat
             newCourse.centerLon = center?.lon
             context.insert(newCourse)
@@ -246,12 +246,12 @@ extension CourseEditorView {
             // CI screenshot: sample results, no server needed.
             if ProcessInfo.processInfo.arguments.contains("-catalogDemo"), results.isEmpty {
                 let tees = [("Blue", "male", 69.7, 118, 6100), ("White", "male", 68.4, 114, 5720), ("Red", "female", 70.9, 121, 5210)]
-                let demo = CatalogCourse(id: 1, club: "Demo Links", course: "Demo Links", city: "Dunedin", country: "New Zealand",
+                let demo = CatalogCourse(id: "demo-1", club: "Demo Links", course: "Demo Links", city: "Dunedin", country: "New Zealand",
                                          lat: -45.9, lon: 170.5,
                                          tees: tees.map { CatalogTee(name: $0.0, gender: $0.1, rating: $0.2, slope: $0.3, par: 70, yards: $0.4,
                                                                     holes: []) })
                 query = "demo links"
-                results = [demo, CatalogCourse(id: 2, club: "Demo Golf Club", course: "Hill Course", city: "Auckland",
+                results = [demo, CatalogCourse(id: "demo-2", club: "Demo Golf Club", course: "Hill Course", city: "Auckland",
                                                country: "New Zealand", tees: [])]
                 chosen = demo
             }

@@ -100,7 +100,7 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
 
 ### One-time setup
 
-1. SQL Editor → run `supabase/migrations/004_course_data.sql`.
+1. SQL Editor → run `supabase/migrations/004_course_data.sql`, then `005_course_ids_text.sql`.
 2. **Edge Functions → Secrets** → add `GOLFCOURSEAPI_KEY` with your key from golfcourseapi.com.
 3. **Edge Functions → Deploy a new function → Via editor** → name it `course-search` → paste
    `supabase/functions/course-search/index.ts` → **Deploy**.
