@@ -45,6 +45,10 @@ struct DetailedHoleView: View {
             lie = holeShots.isEmpty ? .tee : guessLie()
             camera = initialCamera()
         }
+        .onChange(of: holeGeo) {
+            // Map data can arrive after the hole opens (download, or the player sets the green).
+            camera = initialCamera()
+        }
         .onChange(of: location.point) {
             // Keep the lie guess fresh as the player walks, unless they picked one themselves.
             if !lieTouched && !holeShots.isEmpty { lie = guessLie() }
