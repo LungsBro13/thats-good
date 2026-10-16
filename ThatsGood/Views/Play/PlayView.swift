@@ -7,6 +7,7 @@ struct PlayView: View {
     @Query(filter: #Predicate<Round> { !$0.isComplete }, sort: \Round.playedOn, order: .reverse)
     private var openRounds: [Round]
     @Query(filter: #Predicate<Round> { $0.isComplete }) private var completedRounds: [Round]
+    @Query private var imported: [ImportedScore]
 
     @State private var activeRound: Round?
     @State private var chosenCourse: Course?
@@ -72,7 +73,7 @@ struct PlayView: View {
             }
             .sheet(item: $chosenCourse) { course in
                 StartRoundSheet(course: course,
-                                handicapIndex: Handicap.currentIndex(completedRounds.map(\.data))) { round in
+                                handicapIndex: Handicap.currentIndex(completedRounds.map(\.data), imported: imported.map(\.data))) { round in
                     activeRound = round
                 }
             }
@@ -90,7 +91,7 @@ struct PlayView: View {
                 guard args.contains("-openRound"), activeRound == nil,
                       let course = courses.first else { return }
                 activeRound = openRounds.first
-                    ?? Round.start(course: course, handicapIndex: Handicap.currentIndex(completedRounds.map(\.data)), in: context)
+                    ?? Round.start(course: course, handicapIndex: Handicap.currentIndex(completedRounds.map(\.data), imported: imported.map(\.data)), in: context)
             }
             #endif
         }

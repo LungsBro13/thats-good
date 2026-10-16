@@ -435,5 +435,37 @@ let plan = PracticePlan.build([puttRound])
 check(plan.first?.category == .putting && plan.first?.focus == "Putts from 7–20 ft", "practice plan finds the putting leak")
 check(PracticePlan.build([]).isEmpty, "no data, no plan")
 
+
+// MARK: Importing scores
+
+check(ImportedRound(date: .now, courseName: "A", teeName: "", adjustedGross: 78, courseRating: 69.7, slope: 118).differential == 7.9,
+      "differential: 113/118 × (78 − 69.7) = 7.9")
+check(ImportedRound(date: .now, courseName: "A", teeName: "", adjustedGross: 80, courseRating: 70.8, slope: 128, pcc: -1).differential == 9.0,
+      "differential with PCC −1")
+
+let csv = """
+Date,Course,Tee,Adj Gross,Course Rating,Slope,PCC,Holes,Pars
+08/10/2026,"Links, North",Blue,78,69.7,118,0,,
+2026-09-15,Hill Club,Blue,84,70.8,128,0,4 4 1 5 3 3 3 5 4 7 7 7 5 3 4 3 4 4,4 4 3 4 3 4 3 3 4 5 3 5 4 3 4 3 4 4
+31/02/2026,Bad,Blue,80,70,120,0,,
+"""
+let parsed = ScoreImport.parse(csv)
+check(parsed.rounds.count == 2 && parsed.problems.count == 1, "CSV: two good rows, one bad date")
+check(parsed.rounds.first?.courseName == "Links, North", "CSV: quoted course name with a comma")
+check(parsed.rounds.last?.holeStrokes.count == 18 && parsed.rounds.last?.holePars.reduce(0, +) == 67, "CSV: hole-by-hole card")
+let tsv = "date\tcourse\tscore\trating\tslope\n12/06/2023\tShort Course\t75\t65.9\t112\n"
+check(ScoreImport.parse(tsv).rounds.first?.adjustedGross == 75, "pasted from a spreadsheet (tabs)")
+check(ScoreImport.parse("hello\n1,2").rounds.isEmpty, "no header, nothing imported")
+check(ScoreImport.newOnly(parsed.rounds, existing: [parsed.rounds[0]]).count == 1, "already imported scores are skipped")
+
+// 20 imported differentials: the best 8 average to the index
+let diffs = [11.9, 11.8, 12.7, 10.6, 7.5, 7.6, 7.2, 9.4, 13.8, 17.2, 12.0, 9.0, 9.0, 10.8, 8.9, 10.8, 11.7, 12.7, 9.9, 7.9]
+let importedTwenty = diffs.enumerated().map { i, d in
+    // slope 113, rating 70: the differential is just score − 70 (scores are whole, so use PCC to hit .x)
+    ImportedRound(date: Date(timeIntervalSince1970: Double(i) * 86_400), courseName: "C\(i)", teeName: "",
+                  adjustedGross: 90, courseRating: 90 - d, slope: 113)
+}
+check(close(Handicap.currentIndex([], imported: importedTwenty), 8.3), "best 8 of 20 imported differentials: 8.3")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)

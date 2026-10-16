@@ -216,3 +216,36 @@ final class HoleScore {
         set { green = newValue?.rawValue }
     }
 }
+
+/// A score brought in from another app or a national handicap system (raw facts only).
+@Model
+final class ImportedScore {
+    var playedOn: Date
+    var courseName: String
+    var teeName: String
+    var adjustedGross: Int
+    var courseRating: Double
+    var slope: Int
+    var pcc: Int
+    var holeStrokes: [Int]
+    var holePars: [Int]
+    var importedAt: Date
+
+    init(_ r: ImportedRound) {
+        playedOn = r.date
+        courseName = r.courseName
+        teeName = r.teeName
+        adjustedGross = r.adjustedGross
+        courseRating = r.courseRating
+        slope = r.slope
+        pcc = r.pcc
+        holeStrokes = r.holeStrokes
+        holePars = r.holePars
+        importedAt = .now
+    }
+
+    var data: ImportedRound {
+        ImportedRound(date: playedOn, courseName: courseName, teeName: teeName, adjustedGross: adjustedGross,
+                      courseRating: courseRating, slope: slope, pcc: pcc, holeStrokes: holeStrokes, holePars: holePars)
+    }
+}

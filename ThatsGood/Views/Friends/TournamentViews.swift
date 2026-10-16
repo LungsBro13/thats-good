@@ -83,6 +83,7 @@ struct NewTournamentView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Course.name) private var courses: [Course]
     @Query(filter: #Predicate<Round> { $0.isComplete }) private var myRounds: [Round]
+    @Query private var imported: [ImportedScore]
 
     @State private var name = ""
     @State private var scoring: TourScoring = .stroke
@@ -101,7 +102,7 @@ struct NewTournamentView: View {
     @State private var guestHandicap = ""
 
     private var myIndex: Double? {
-        Handicap.currentIndex(myRounds.map(\.data))
+        Handicap.currentIndex(myRounds.map(\.data), imported: imported.map(\.data))
             ?? PlayerProgress.compute((backend.rounds[backend.myID ?? UUID()] ?? []).map(\.data)).handicap
     }
 
@@ -298,6 +299,7 @@ struct JoinTournamentView: View {
     @ObservedObject private var backend = Backend.shared
     @Environment(\.dismiss) private var dismiss
     @Query(filter: #Predicate<Round> { $0.isComplete }) private var myRounds: [Round]
+    @Query private var imported: [ImportedScore]
     @State private var code = ""
 
     var body: some View {
@@ -321,7 +323,7 @@ struct JoinTournamentView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Join") {
-                        let index = Handicap.currentIndex(myRounds.map(\.data))
+                        let index = Handicap.currentIndex(myRounds.map(\.data), imported: imported.map(\.data))
                             ?? PlayerProgress.compute((backend.rounds[backend.myID ?? UUID()] ?? []).map(\.data)).handicap
                         Task {
                             if let id = await backend.joinTournament(code: code, index: index) {

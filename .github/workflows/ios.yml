@@ -99,6 +99,10 @@ jobs:
           sleep 6
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/bag-clubs.png"
           xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag -importSample
+          sleep 6
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/import.png"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab friends -socialDemo
           sleep 6
           xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running on the Friends tab"; exit 1; }
