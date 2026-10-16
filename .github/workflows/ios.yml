@@ -28,14 +28,15 @@ jobs:
       - name: Build app for the simulator
         run: |
           set +e
-          xcodebuild -project ThatsGood.xcodeproj -target ThatsGood -sdk iphonesimulator \
+          xcodebuild -project ThatsGood.xcodeproj -scheme ThatsGood -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/dd \
             -configuration Debug build CODE_SIGNING_ALLOWED=NO > "$RUNNER_TEMP/build.log" 2>&1
           status=$?
           set -e
           grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" "$RUNNER_TEMP/build.log" || true
           grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u | head -10 | while read -r line; do echo "::error title=Build::$line"; done
-          grep -E "\.swift:[0-9]+:[0-9]+: warning:" "$RUNNER_TEMP/build.log" | sort -u | head -10 | while read -r line; do echo "::warning title=Build::$line"; done
-          echo "::notice title=Build::Xcode $(xcodebuild -version | head -1), exit $status, $(grep -cE '\.swift:[0-9]+:[0-9]+: warning:' "$RUNNER_TEMP/build.log") Swift warnings, $(grep -oE 'BUILD (SUCCEEDED|FAILED)' "$RUNNER_TEMP/build.log" | tail -1)"
+          grep -E "\.swift:[0-9]+:[0-9]+: warning:" "$RUNNER_TEMP/build.log" | grep -v SourcePackages | sort -u | head -10 | while read -r line; do echo "::warning title=Build::$line"; done
+          echo "::notice title=Build::Xcode $(xcodebuild -version | head -1), exit $status, $(grep -E '\.swift:[0-9]+:[0-9]+: warning:' "$RUNNER_TEMP/build.log" | grep -v SourcePackages | sort -u | wc -l | tr -d ' ') Swift warnings in our code, $(grep -oE 'BUILD (SUCCEEDED|FAILED)' "$RUNNER_TEMP/build.log" | tail -1)"
           exit $status
 
       - name: Check OpenStreetMap data for the test course
@@ -55,7 +56,7 @@ jobs:
           xcrun simctl bootstatus "$udid" -b
           xcrun simctl ui "$udid" appearance dark
           xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100
-          xcrun simctl install "$udid" build/Debug-iphonesimulator/ThatsGood.app
+          xcrun simctl install "$udid" build/dd/Build/Products/Debug-iphonesimulator/ThatsGood.app
           mkdir -p "$RUNNER_TEMP/shots"
           for tab in home stats play bag; do
             xcrun simctl terminate "$udid" com.lungsbro13.thatsgood 2>/dev/null || true
@@ -72,7 +73,7 @@ jobs:
           # Detailed mode on a real course from OpenStreetMap, standing on the 1st tee of the Old Course
           xcrun simctl terminate "$udid" com.lungsbro13.thatsgood 2>/dev/null || true
           xcrun simctl uninstall "$udid" com.lungsbro13.thatsgood
-          xcrun simctl install "$udid" build/Debug-iphonesimulator/ThatsGood.app
+          xcrun simctl install "$udid" build/dd/Build/Products/Debug-iphonesimulator/ThatsGood.app
           xcrun simctl privacy "$udid" grant location com.lungsbro13.thatsgood
           xcrun simctl location "$udid" set 56.34315,-2.80265
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab play -osmDemo
