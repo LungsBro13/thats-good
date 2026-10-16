@@ -61,6 +61,9 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
 1. Scorecard, Quick mode, basic stats, handicap estimate, Stats dashboard
 2. GPS, rangefinder, Detailed mode, club distances, Strokes Gained
 3. Accounts, friends, side matches, rivalries, leaderboards, tournaments with live scoring
+   - 3a done: accounts, friends, shared rounds, progress, leaderboards
+   - 3b next: side matches scored live and all-time rivalry records
+   - 3c: tournaments
 4. Smart caddie and practice plan
 5. AI swing analyser (see below)
 
