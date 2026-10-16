@@ -63,9 +63,6 @@ struct RoundWrappedView: View {
             let palette = slide.map { WrappedPalette.forSlide(index, kind: $0.kind) } ?? WrappedPalette.outro
 
             ZStack {
-                WrappedBackground(palette: palette)
-                    .animation(.easeInOut(duration: 0.5), value: index)
-
                 if let slide {
                     WrappedSlideView(slide: slide, ink: palette.ink)
                         .id(slide.id)
@@ -96,6 +93,13 @@ struct RoundWrappedView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .background {
+                WrappedBackground(palette: palette)
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+                    .animation(.easeInOut(duration: 0.5), value: index)
             }
             .contentShape(Rectangle())
             .gesture(
@@ -166,10 +170,16 @@ struct RoundWrappedView: View {
         let ctx = WrappedContext.make(round, allRounds: allRounds, imported: imported)
         context = ctx
         slides = RoundWrapped.slides(ctx)
-        index = min(max(0, startAt), max(0, slides.count - 1))
+        var start = startAt
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-wrappedSlide") { paused = true }  // CI screenshots hold still
+        // CI screenshots: -wrappedSlide N opens slide N and holds still.
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-wrappedSlide"), i + 1 < args.count, let n = Int(args[i + 1]) {
+            start = n
+            paused = true
+        }
         #endif
+        index = min(max(0, start), max(0, slides.count - 1))
         renderShareCard(ctx)
     }
 
