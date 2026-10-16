@@ -91,9 +91,12 @@ begin
   if auth.uid() is null then raise exception 'Sign in first'; end if;
   select id into t from public.tournaments where join_code = upper(trim(code)) and status = 'setup';
   if t is null then raise exception 'No tournament with that code is open to join'; end if;
+  if exists (select 1 from public.tournament_players where tournament_id = t and user_id = auth.uid()) then
+    return t;
+  end if;
   select coalesce(max(sort_order), -1) + 1 into next_order from public.tournament_players where tournament_id = t;
   insert into public.tournament_players (tournament_id, player_key, user_id, name, handicap_index, sort_order)
-  values (t, auth.uid()::text, auth.uid(), left(player_name, 40), player_index, next_order)
+  values (t, upper(auth.uid()::text), auth.uid(), left(player_name, 40), player_index, next_order)
   on conflict (tournament_id, player_key) do nothing;
   return t;
 end;

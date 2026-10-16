@@ -98,7 +98,19 @@ jobs:
           sleep 6
           xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running on a live match"; exit 1; }
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/match.png"
-          echo "::notice title=Launch::App opened all tabs, the scoring screen, Detailed mode and Friends without crashing"
+          for kind in cup stroke knockout lobby; do
+            xcrun simctl terminate "$udid" com.lungsbro13.thatsgood 2>/dev/null || true
+            xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab friends -socialDemo -openTournament "$kind"
+            sleep 6
+            xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running on the $kind tournament"; exit 1; }
+            xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/tour-$kind.png"
+          done
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab friends -socialDemo -openTournament cup -tourScoring
+          sleep 7
+          xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running on tournament scoring"; exit 1; }
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/tour-scoring.png"
+          echo "::notice title=Launch::App opened all tabs, the scoring screen, Detailed mode, Friends, matches and tournaments without crashing"
 
       - name: Save screenshots to the ci-screens branch
         if: startsWith(github.ref, 'refs/heads/phase-')

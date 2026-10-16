@@ -18,6 +18,7 @@ struct FriendsHubView: View {
 
     @State private var addingFriend = false
     @State private var openMatch: UUID?
+    @State private var openTournament: UUID?
     @State private var measure: ProgressMeasure = .handicap
     @State private var board: LeaderboardKind = .handicap
 
@@ -45,6 +46,7 @@ struct FriendsHubView: View {
             VStack(alignment: .leading, spacing: 26) {
                 if !backend.incoming.isEmpty { requests }
                 summary(everyone)
+                TournamentsSection(open: $openTournament)
                 MatchesSection(openMatch: $openMatch)
                 if backend.friends.isEmpty {
                     emptyState
@@ -76,10 +78,25 @@ struct FriendsHubView: View {
         }
         .sheet(isPresented: $addingFriend) { AddFriendView() }
         .navigationDestination(item: $openMatch) { id in MatchView(matchID: id) }
+        .navigationDestination(item: $openTournament) { id in TournamentView(tournamentID: id) }
         #if DEBUG
         .onAppear {
-            if ProcessInfo.processInfo.arguments.contains("-openMatch") {
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("-openMatch") {
                 openMatch = backend.matches.first(where: \.isLive)?.id
+            }
+            // -openTournament cup | stroke | knockout | lobby
+            if let i = args.firstIndex(of: "-openTournament"), i + 1 < args.count {
+                let kind = args[i + 1]
+                openTournament = backend.tournaments.first { t in
+                    let s = t.setup
+                    switch kind {
+                    case "cup": return s.mode == .teams && s.scoring == .match
+                    case "knockout": return s.isKnockout
+                    case "lobby": return t.isSetup
+                    default: return s.scoring == .stroke && !t.isSetup
+                    }
+                }?.id
             }
         }
         #endif
