@@ -63,6 +63,10 @@ struct FriendDetailView: View {
                 .overlay(alignment: .bottom) { Hairline() }
 
                 if !player.isMe {
+                    RivalrySection(friend: player.profile)
+                }
+
+                if !player.isMe {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
                             Text("You").font(.subheadline.weight(.semibold))
@@ -90,10 +94,6 @@ struct FriendDetailView: View {
                             .frame(minHeight: 40)
                             Hairline()
                         }
-                        Text("Head-to-head match records arrive with side matches.")
-                            .font(.caption)
-                            .foregroundStyle(Color.tgMuted)
-                            .padding(.top, 8)
                     }
                 }
 
