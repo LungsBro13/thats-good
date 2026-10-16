@@ -126,15 +126,15 @@ enum SampleData {
             strokes += 1
 
             let carry = clubYards.first { $0.0 == club }!.1
-            var hit = carry * (1 + 0.07 * gaussian())
+            var hit = carry * (1 + 0.065 * gaussian())
             if lie == .rough { hit *= 0.93 }
             if lie == .sand { hit *= 0.85 }
             if club != "Dr" && club != "3W" { hit = min(hit, remaining + 15) }
             along += hit
-            side += gaussian() * carry * 0.06
+            side += gaussian() * carry * 0.045
             remaining = sqrt(pow(length - along, 2) + side * side)
 
-            if remaining < 12 {
+            if remaining < 17 {
                 lie = .green
             } else if remaining <= 30 {
                 lie = roll() < 0.25 ? .sand : .rough
@@ -151,7 +151,7 @@ enum SampleData {
         if lie != .green {
             mark(lie == .sand ? "SW" : "LW", lie, toGreen: remaining)
             strokes += 1
-            firstPutt = max(2, 6 + 5 * gaussian())
+            firstPutt = max(2, 13 + 6 * gaussian())
             along = length - firstPutt / 3
             side = 0
         } else {

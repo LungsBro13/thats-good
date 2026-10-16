@@ -67,7 +67,7 @@ jobs:
           xcrun simctl privacy "$udid" grant location com.lungsbro13.thatsgood
           xcrun simctl location "$udid" set 56.34315,-2.80265
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab play -osmDemo
-          sleep 25
+          sleep 45
           xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running in Detailed mode"; exit 1; }
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/detailed.png"
           xcrun simctl terminate "$udid" com.lungsbro13.thatsgood

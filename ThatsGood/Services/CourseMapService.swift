@@ -17,7 +17,11 @@ enum CourseMapError: LocalizedError {
 
 /// Finds a course and downloads its greens, tees, fairways, bunkers and water from OpenStreetMap.
 enum CourseMapService {
-    static let overpassURL = URL(string: "https://overpass-api.de/api/interpreter")!
+    /// The main Overpass server, then a mirror if it's busy.
+    static let overpassURLs = [
+        URL(string: "https://overpass-api.de/api/interpreter")!,
+        URL(string: "https://overpass.kumi.systems/api/interpreter")!,
+    ]
 
     /// Uses Apple Maps search to turn a course name into a position.
     static func locate(courseName: String) async throws -> GeoPoint {
@@ -30,8 +34,20 @@ enum CourseMapService {
     }
 
     static func download(around point: GeoPoint, radius: Int = 1800) async throws -> CourseGeo {
+        var lastError: Error = CourseMapError.server(0)
+        for url in overpassURLs {
+            do {
+                return try await download(from: url, around: point, radius: radius)
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
+    private static func download(from url: URL, around point: GeoPoint, radius: Int) async throws -> CourseGeo {
         let query = OSMParser.query(around: point, radius: radius)
-        var request = URLRequest(url: overpassURL)
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.timeoutInterval = 40
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
