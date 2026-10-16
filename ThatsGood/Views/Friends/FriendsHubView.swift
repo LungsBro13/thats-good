@@ -17,6 +17,7 @@ struct FriendsHubView: View {
     @Environment(\.modelContext) private var context
 
     @State private var addingFriend = false
+    @State private var openMatch: UUID?
     @State private var measure: ProgressMeasure = .handicap
     @State private var board: LeaderboardKind = .handicap
 
@@ -44,10 +45,12 @@ struct FriendsHubView: View {
             VStack(alignment: .leading, spacing: 26) {
                 if !backend.incoming.isEmpty { requests }
                 summary(everyone)
+                MatchesSection(openMatch: $openMatch)
                 if backend.friends.isEmpty {
                     emptyState
                 } else {
                     progressSection(everyone)
+                    rivalriesSection
                     leaderboardSection(everyone)
                     activitySection(everyone)
                 }
@@ -72,6 +75,14 @@ struct FriendsHubView: View {
             ToolbarItem(placement: .topBarLeading) { accountMenu }
         }
         .sheet(isPresented: $addingFriend) { AddFriendView() }
+        .navigationDestination(item: $openMatch) { id in MatchView(matchID: id) }
+        #if DEBUG
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-openMatch") {
+                openMatch = backend.matches.first(where: \.isLive)?.id
+            }
+        }
+        #endif
         .refreshable {
             await backend.sync(context: context)
             await backend.refresh()
@@ -172,6 +183,40 @@ struct FriendsHubView: View {
                 }
                 .buttonStyle(.plain)
                 Hairline()
+            }
+        }
+    }
+
+    private var rivalriesSection: some View {
+        let rows = backend.friends.compactMap { friend -> (ProfileDTO, RivalryRecord)? in
+            let record = backend.rivalry(with: friend.id).record
+            return record.played > 0 ? (friend, record) : nil
+        }
+        return Group {
+            if !rows.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    SectionLabel("Rivalries · all time").padding(.bottom, 6)
+                    ForEach(rows, id: \.0.id) { friend, record in
+                        HStack(spacing: 12) {
+                            Avatar(initials: friend.initials)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("vs \(friend.displayName)").font(.body.weight(.semibold))
+                                Text("\(record.played) match\(record.played == 1 ? "" : "es")")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.tgMuted)
+                            }
+                            Spacer()
+                            Text("\(record.wins)–\(record.halves)–\(record.losses)")
+                                .font(.body.weight(.semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(record.wins > record.losses ? Color.tgAccent
+                                                 : (record.wins < record.losses ? Color.tgLoss : Color.primary))
+                        }
+                        .frame(minHeight: 54)
+                        Hairline()
+                    }
+                    Text("Won–halved–lost").font(.caption2).foregroundStyle(Color.tgMuted).padding(.top, 4)
+                }
             }
         }
     }

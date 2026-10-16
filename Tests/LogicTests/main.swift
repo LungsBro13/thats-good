@@ -217,5 +217,86 @@ check(ServerURL.normalize("https://supabase.com/dashboard/project/abcdefghijklmn
 check(ServerURL.normalize("https://supabase.com/dashboard") == nil, "the website itself is rejected")
 check(ServerURL.normalize("hello") == nil, "junk is rejected")
 
+// Side matches
+let matchHoles = (0..<18).map { MatchHoleInfo(number: $0 + 1, par: pars[$0], strokeIndex: strokeIndexes[$0]) }
+func setup(_ format: MatchFormat, basis: HandicapBasis = .gross, players: [MatchPlayerInfo]) -> MatchSetup {
+    MatchSetup(format: format, basis: basis, allowance: .full, holes: matchHoles,
+               courseRating: 72, slope: 113, players: players)
+}
+let sam = MatchPlayerInfo(key: "sam", name: "Sam", handicapIndex: 7)
+let dave = MatchPlayerInfo(key: "dave", name: "Dave", handicapIndex: 9)
+let tom = MatchPlayerInfo(key: "tom", name: "Tom", handicapIndex: 5)
+func card(_ overPar: [Int]) -> [Int: Int] {
+    Dictionary(uniqueKeysWithValues: (0..<overPar.count).map { ($0 + 1, pars[$0] + overPar[$0]) })
+}
+
+// Handicaps: match play plays off the lowest; stroke play is absolute
+let mpNet = setup(.matchplay, basis: .net, players: [sam, dave])
+check(MatchEngine.playingHandicaps(mpNet) == ["sam": 0, "dave": 2], "match play: Dave gets the 2-shot difference")
+check(MatchEngine.playingHandicaps(setup(.stroke, basis: .net, players: [sam, dave])) == ["sam": 7, "dave": 9], "stroke play: full course handicaps")
+var whsStroke = setup(.stroke, basis: .net, players: [sam])
+whsStroke.allowance = .whs
+check(MatchEngine.playingHandicaps(whsStroke)["sam"] == 7, "95% of 7 rounds to 7")
+check(MatchEngine.playingHandicaps(setup(.stroke, players: [sam, dave])) == ["sam": 0, "dave": 0], "gross: no strokes")
+
+// Match play, gross: Sam wins holes 1 and 2, then all halved → 2 UP thru 5
+var mp = setup(.matchplay, players: [sam, dave])
+var mpScores: ScoreTable = ["sam": card([0, 0, 0, 0, 0]), "dave": card([1, 1, 0, 0, 0])]
+var out = MatchEngine.outcome(mp, mpScores)
+check(out.status == "Sam 2 UP thru 5", "match play live status")
+check(out.standings.first?.key == "sam" && out.standings.first?.value == "2 UP", "leader shown first")
+check(!out.isFinished, "match play not finished thru 5")
+// Sam wins 7 of the first 12 and halves the rest → 7 up with 6 to play → 7&6
+mpScores = ["sam": card(Array(repeating: 0, count: 12)), "dave": card([1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0])]
+out = MatchEngine.outcome(mp, mpScores)
+check(out.status == "Sam 7&6", "closed out 7&6")
+check(out.isFinished, "closed-out match is finished")
+check(MatchEngine.pairResult(mp, mpScores, "sam", "dave") == .win, "Sam beat Dave")
+check(MatchEngine.pairResult(mp, mpScores, "dave", "sam") == .loss, "Dave lost to Sam")
+
+// Net match play: Dave's 2 strokes come on SI 1 and 2 (holes 5 and 12)
+mp = mpNet
+mpScores = ["sam": card(Array(repeating: 0, count: 18)), "dave": card(Array(repeating: 0, count: 18))]
+check(MatchEngine.outcome(mp, mpScores).status == "Dave 2 UP", "net: level gross scores, Dave wins his stroke holes")
+
+// Nassau: Sam wins the front by one, Dave the back by one, overall halved
+let nassau = setup(.nassau, players: [sam, dave])
+let front = [0, 0, 0, 0, 0, 0, 0, 0, 0], back = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+var samCard = front + back, daveCard = front + back
+daveCard[0] = 1  // Sam wins hole 1
+samCard[9] = 1   // Dave wins hole 10
+out = MatchEngine.outcome(nassau, ["sam": card(samCard), "dave": card(daveCard)])
+check(out.status == "Front: Sam 1 UP · Back: Dave 1 UP · Overall: Halved", "Nassau three bets")
+check(out.isFinished, "Nassau finished after 18")
+check(MatchEngine.pairResult(nassau, ["sam": card(samCard), "dave": card(daveCard)], "sam", "dave") == .halve, "Nassau overall halved")
+
+// Skins: hole 1 tied (carry), Tom wins hole 2 for 2 skins, Sam wins hole 3
+let skinsMatch = setup(.skins, players: [sam, dave, tom])
+let skinScores: ScoreTable = ["sam": card([0, 0, -1]), "dave": card([0, 1, 0]), "tom": card([0, -1, 0])]
+let skinResult = MatchEngine.skins(skinsMatch, skinScores)
+check(skinResult.won == ["sam": 1, "dave": 0, "tom": 2], "skins carry over")
+check(skinResult.carrying == 0, "nothing carrying after a won hole")
+check(MatchEngine.skins(skinsMatch, ["sam": card([0]), "dave": card([0]), "tom": card([0])]).carrying == 1, "a tied hole carries")
+check(MatchEngine.outcome(skinsMatch, skinScores).standings.first?.key == "tom", "most skins leads")
+
+// Stableford: par = 2, birdie = 3, bogey = 1, double = 0
+check(MatchEngine.stablefordPoints(par: 4, net: 4) == 2 && MatchEngine.stablefordPoints(par: 4, net: 3) == 3, "stableford points")
+check(MatchEngine.stablefordPoints(par: 4, net: 6) == 0 && MatchEngine.stablefordPoints(par: 4, net: 9) == 0, "no negative points")
+let stable = setup(.stableford, players: [sam, dave])
+out = MatchEngine.outcome(stable, ["sam": card([0, -1]), "dave": card([1, 0])])
+check(out.standings.map(\.value) == ["5 pts", "3 pts"], "stableford totals")
+
+// Stroke play with ties
+let strokeMatch = setup(.stroke, players: [sam, dave, tom])
+out = MatchEngine.outcome(strokeMatch, ["sam": card([1, 0]), "dave": card([0, 1]), "tom": card([0, 0])])
+check(out.standings.map(\.positionLabel) == ["1", "T2", "T2"], "stroke play ties share a position")
+check(out.standings.first?.value == "E", "level par shows E")
+
+// Rivalry record
+let record = RivalryRecord.build([(.matchplay, .win), (.nassau, .halve), (.matchplay, .loss), (.stroke, .win)])
+check(record.wins == 2 && record.losses == 1 && record.halves == 1 && record.played == 4, "rivalry totals")
+check(record.byFormat[.matchplay]?.wins == 1 && record.byFormat[.matchplay]?.losses == 1, "rivalry by format")
+check(record.form.first == .win, "form is most recent first")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)

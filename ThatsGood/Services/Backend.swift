@@ -220,11 +220,12 @@ final class Backend: ObservableObject {
     @Published private(set) var incoming: [ProfileDTO] = []
     @Published private(set) var outgoing: [ProfileDTO] = []
     @Published private(set) var rounds: [UUID: [SharedRoundDTO]] = [:]
+    @Published var matches: [LiveMatch] = []
     @Published private(set) var isBusy = false
     @Published var message: String?
 
-    private var api: SupabaseAPI?
-    private var userID: UUID?
+    var api: SupabaseAPI?
+    var userID: UUID?
 
     private static let urlKey = "supabaseURL"
     private static let keyKey = "supabaseKey"
@@ -276,6 +277,7 @@ final class Backend: ObservableObject {
         incoming = []
         outgoing = []
         rounds = [:]
+        matches = []
     }
 
     // MARK: Account
@@ -367,6 +369,7 @@ final class Backend: ObservableObject {
 
             let shared = try await api.rounds(for: accepted + [me])
             rounds = Dictionary(grouping: shared, by: \.userID)
+            await refreshMatches()
         } catch {
             message = friendly(error)
         }
@@ -435,7 +438,7 @@ final class Backend: ObservableObject {
 
     // MARK: Helpers
 
-    private func run(_ work: @escaping @MainActor (SupabaseAPI) async throws -> Void) async {
+    func run(_ work: @escaping @MainActor (SupabaseAPI) async throws -> Void) async {
         guard let api else { return }
         isBusy = true
         message = nil
@@ -447,7 +450,7 @@ final class Backend: ObservableObject {
         }
     }
 
-    private func friendly(_ error: Error) -> String {
+    func friendly(_ error: Error) -> String {
         if error is DecodingError {
             return "The server sent back something unexpected. Check the Project URL looks like https://xxxx.supabase.co (Supabase → Project Settings → Data API), and that the SQL setup ran. Then tap Disconnect and connect again."
         }
@@ -502,6 +505,7 @@ final class Backend: ObservableObject {
             people[2].id: makeRounds(for: people[2], start: 0.85, end: 0.6),
         ]
         status = .signedIn
+        loadDemoMatches()
     }
     #endif
 }
