@@ -101,5 +101,92 @@ check(summary.totalPenalties == 1, "one penalty")
 check(close(summary.averageScore, 78), "6 bogeys on par 72 is 78")
 check(close(summary.mixPerRound.bogeys, 6), "6 bogeys per round")
 
+// Geo
+let origin = GeoPoint(lat: 56.3433, lon: -2.8030)
+let north150 = Geo.offset(origin, bearing: 0, meters: 150 / Geo.yardsPerMeter)
+check(abs(Geo.yards(origin, north150) - 150) < 0.5, "offset then distance round-trips 150 yards")
+check(abs(Geo.bearing(origin, north150)) < 0.5 || abs(Geo.bearing(origin, north150) - 360) < 0.5, "due north bearing is 0")
+let east = Geo.offset(origin, bearing: 90, meters: 100)
+check(abs(Geo.bearing(origin, east) - 90) < 0.5, "due east bearing is 90")
+
+// A square green 20 m across, centred 150 yards north
+let greenCenter = north150
+let greenOutline = [0.0, 90, 180, 270].map { Geo.offset(greenCenter, bearing: $0, meters: 10) }
+let fmb = Geo.frontMiddleBack(from: origin, greenCenter: greenCenter, outline: greenOutline)
+check(abs(fmb.middle - 150) < 0.5, "middle of green is 150")
+check(abs((fmb.front ?? 0) - (150 - 10.94)) < 0.6, "front is about 11 yards short of the middle")
+check(abs((fmb.back ?? 0) - (150 + 10.94)) < 0.6, "back is about 11 yards past the middle")
+check(Geo.contains(greenOutline, greenCenter), "green contains its centre")
+check(!Geo.contains(greenOutline, origin), "green does not contain the tee")
+
+// Course geo
+var course = CourseGeo(holes: [], features: [MapFeature(kind: .green, points: greenOutline)])
+check(course.lie(at: greenCenter) == .green, "lie on the green")
+check(course.lie(at: origin) == .rough, "lie off any mapped area is rough")
+check(CourseGeo().lie(at: origin) == nil, "no lie guess without map data")
+course.setGreen(hole: 3, at: Geo.offset(greenCenter, bearing: 45, meters: 3))
+check(course.hole(3)?.greenOutline.count == 4, "tapping inside a mapped green snaps to it")
+check(abs(Geo.meters(course.hole(3)!.greenCenter, greenCenter)) < 1, "snapped green centre is the polygon centre")
+
+// OSM parsing
+let greenGeometry = greenOutline.map { p in "{\"lat\":\(p.lat),\"lon\":\(p.lon)}" }.joined(separator: ",")
+let osmJSON = """
+{"elements":[
+ {"type":"way","id":1,"tags":{"golf":"hole","ref":"1","par":"4"},
+  "geometry":[{"lat":\(origin.lat),"lon":\(origin.lon)},{"lat":\(greenCenter.lat),"lon":\(greenCenter.lon)}]},
+ {"type":"way","id":2,"tags":{"golf":"green"},
+  "geometry":[\(greenGeometry)]},
+ {"type":"way","id":3,"tags":{"natural":"water"},
+  "geometry":[{"lat":1,"lon":1},{"lat":1,"lon":2},{"lat":2,"lon":2}]},
+ {"type":"node","id":4}
+]}
+"""
+if let parsed = try? OSMParser.parse(Data(osmJSON.utf8)) {
+    check(parsed.holes.count == 1 && parsed.holes[0].number == 1 && parsed.holes[0].par == 4, "OSM hole 1 par 4 parsed")
+    check(parsed.holes[0].greenOutline.count == 4, "OSM hole matched to its green")
+    check(parsed.features.count == 2, "OSM green and water kept as areas")
+} else {
+    check(false, "OSM JSON parses")
+}
+
+// Strokes gained
+check(close(StrokesGained.expected(.green, 10), 1.61), "baseline: 10 ft putt is 1.61")
+check(close(StrokesGained.expected(.fairway, 150), 2.945), "baseline interpolates between 140 and 160")
+check(close(StrokesGained.expected(.tee, 80), StrokesGained.expected(.fairway, 80)), "short tee shots use the fairway table")
+
+// Par 4: drive from 400 to the fairway at 140, approach to 20 ft, two putts
+var sgHole = HoleData(par: 4, strokeIndex: 1, strokes: 4, putts: 2, firstPuttFeet: 20,
+                      fairway: .hit, green: .hit, upAndDown: nil, penalties: 0,
+                      shots: [ShotData(lie: .tee, distance: 400), ShotData(lie: .fairway, distance: 140)])
+var sg = StrokesGained.holeValues(sgHole)
+check(close(sg[.offTheTee], 3.99 - 2.91 - 1), "drive SG = 0.08")
+check(close(sg[.approach], 2.91 - 1.87 - 1), "approach SG = 0.04")
+check(close(sg[.putting], 1.87 - 2), "two putts from 20 ft SG = -0.13")
+sgHole.penalties = 1
+sg = StrokesGained.holeValues(sgHole)
+check(close(sg[.offTheTee], 3.99 - 2.91 - 1 - 1), "penalty comes off the tee shot")
+
+// Chip-in from 15 yards in the rough
+let chipIn = HoleData(par: 4, strokeIndex: 1, strokes: 3, putts: 0, firstPuttFeet: nil,
+                      fairway: nil, green: .short, upAndDown: true, penalties: 0,
+                      shots: [ShotData(lie: .rough, distance: 15)])
+check(close(StrokesGained.holeValues(chipIn)[.aroundGreen], StrokesGained.expected(.rough, 15) - 1), "chip-in SG")
+
+// Quick mode: putting only
+let quickHole = HoleData(par: 3, strokeIndex: 1, strokes: 3, putts: 1, firstPuttFeet: 10,
+                         fairway: nil, green: .hit, upAndDown: nil, penalties: 0)
+let quickSG = StrokesGained.holeValues(quickHole)
+check(quickSG.count == 1 && close(quickSG[.putting], 0.61), "Quick mode gives putting SG only")
+let sgSummary = StrokesGained.summarize([RoundData(date: Date(), courseRating: 72, slope: 113, handicapIndex: nil, holes: [quickHole, quickHole])])
+check(close(sgSummary.perRound(.putting), 1.22) && sgSummary.perRound(.approach) == nil, "SG summary per round")
+
+// Club stats
+let clubSamples: [(club: String, yards: Double)] = [("7i", 150), ("7i", 160), ("7i", 170), ("Dr", 250), ("Dr", 260)]
+let clubs = ClubStats.summarize(clubSamples, order: ["Dr", "7i"])
+check(clubs.map(\.club) == ["Dr", "7i"], "clubs follow bag order")
+check(close(clubs[1].average, 160) && close(clubs[1].median, 160) && clubs[1].count == 3, "7i average and median")
+check(close(clubs[0].median, 255), "even-count median")
+check(close(clubs[1].spread, (200.0 / 3).squareRoot()), "spread is the standard deviation")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)
