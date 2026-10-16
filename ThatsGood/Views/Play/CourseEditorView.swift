@@ -12,6 +12,9 @@ struct CourseEditorView: View {
     @State private var rating: Double
     @State private var slope: Int
     @State private var holes: [CourseHole]
+    @State private var geoData: Data?
+    @State private var mapStatus: String?
+    @State private var loadingMap = false
 
     init(course: Course? = nil) {
         self.course = course
@@ -21,6 +24,7 @@ struct CourseEditorView: View {
         _slope = State(initialValue: course?.slope ?? 113)
         _holes = State(initialValue: course?.holes.sorted { $0.number < $1.number }
                        ?? (1...18).map { CourseHole(number: $0, par: 4, strokeIndex: $0, yards: 0) })
+        _geoData = State(initialValue: course?.geoData)
     }
 
     private var totalPar: Int { holes.reduce(0) { $0 + $1.par } }
@@ -45,6 +49,25 @@ struct CourseEditorView: View {
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                     }
+                }
+
+                Section {
+                    Text(CourseGeo.decode(geoData)?.summary ?? "No map data")
+                        .font(.subheadline.weight(.semibold))
+                    if let mapStatus {
+                        Text(mapStatus).font(.footnote).foregroundStyle(Color.tgMuted)
+                    }
+                    if loadingMap {
+                        ProgressView("Downloading map…")
+                    } else {
+                        Button("Find map by course name") { Task { await findMap(useLocation: false) } }
+                            .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                        Button("Find map at my location") { Task { await findMap(useLocation: true) } }
+                    }
+                } header: {
+                    Text("Map")
+                } footer: {
+                    Text("Greens, bunkers and water come from OpenStreetMap. If a green is missing you can set it on the hole while you play.")
                 }
 
                 Section {
@@ -89,10 +112,45 @@ struct CourseEditorView: View {
             course.courseRating = rating
             course.slope = slope
             course.holes = holes
+            course.geoData = geoData
         } else {
-            context.insert(Course(name: cleanName, teeName: teeName, courseRating: rating, slope: slope, holes: holes))
+            let newCourse = Course(name: cleanName, teeName: teeName, courseRating: rating, slope: slope, holes: holes)
+            newCourse.geoData = geoData
+            context.insert(newCourse)
         }
         dismiss()
+    }
+
+    private func findMap(useLocation: Bool) async {
+        loadingMap = true
+        mapStatus = nil
+        defer { loadingMap = false }
+        do {
+            let center: GeoPoint
+            if useLocation {
+                LocationManager.shared.start()
+                for _ in 0..<20 where LocationManager.shared.point == nil {
+                    try await Task.sleep(nanoseconds: 250_000_000)
+                }
+                guard let here = LocationManager.shared.point else { throw CourseMapError.noLocation }
+                center = here
+            } else {
+                center = try await CourseMapService.locate(courseName: name)
+            }
+            let geo = try await CourseMapService.download(around: center)
+            geoData = geo.encoded()
+            if holes.allSatisfy({ $0.par == 4 }) {
+                // A brand new course: copy pars from the map where it has them.
+                for i in holes.indices {
+                    if let par = geo.hole(holes[i].number)?.par { holes[i].par = par }
+                }
+            }
+            mapStatus = geo.holes.isEmpty
+                ? "Found the course area but no numbered holes. You can set each green as you play."
+                : "Map saved when you tap Save."
+        } catch {
+            mapStatus = error.localizedDescription
+        }
     }
 }
 

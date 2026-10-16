@@ -38,6 +38,18 @@ struct RoundSummaryView: View {
                 .overlay(alignment: .top) { Hairline() }
                 .overlay(alignment: .bottom) { Hairline() }
 
+                let sg = StrokesGained.summarize([data])
+                if sg.hasData {
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionLabel("Strokes gained")
+                        ForEach(SGCategory.allCases) { category in
+                            if let value = sg.perRound(category) {
+                                SGBarRow(label: category.label, value: value, scale: 3, rounds: 1)
+                            }
+                        }
+                    }
+                }
+
                 if let differential {
                     VStack(alignment: .leading, spacing: 4) {
                         SectionLabel("Score differential")

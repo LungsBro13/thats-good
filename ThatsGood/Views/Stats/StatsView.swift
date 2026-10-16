@@ -62,6 +62,7 @@ struct StatsView: View {
                         }
                     } else {
                         trendSection(data, summary: summary)
+                        strokesGainedSection(StrokesGained.summarize(data))
                         keyNumbers(summary)
                         byParSection(summary)
                         mixSection(summary)
@@ -107,6 +108,39 @@ struct StatsView: View {
             .chartYScale(domain: .automatic(includesZero: true))
             .frame(height: 160)
             .accessibilityLabel("Score to par for each round, oldest to newest")
+        }
+    }
+
+    private func strokesGainedSection(_ sg: SGSummary) -> some View {
+        let rows: [(SGCategory, Double)] = SGCategory.allCases.compactMap { category in
+            sg.perRound(category).map { (category, $0) }
+        }
+        let total = rows.reduce(0.0) { $0 + $1.1 }
+        let scale = max(2.0, rows.map { abs($0.1) }.max() ?? 0)
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                SectionLabel("Strokes gained per round")
+                Spacer()
+                if !rows.isEmpty {
+                    Text(String(format: "%+.1f", total))
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(total < 0 ? Color.tgLoss : Color.tgAccent)
+                }
+            }
+            if rows.isEmpty {
+                Text("Enter the first putt length, or play in Detailed mode, to see strokes gained.")
+                    .font(.footnote)
+                    .foregroundStyle(Color.tgMuted)
+            } else {
+                ForEach(rows.map { $0.0 }) { category in
+                    SGBarRow(label: category.label, value: sg.perRound(category) ?? 0, scale: scale,
+                             rounds: sg.roundsWithData[category] ?? 0)
+                }
+                Text("Compared with tour averages (approximate). Putting uses first putt length. Tee, approach and short game need Detailed mode.")
+                    .font(.caption)
+                    .foregroundStyle(Color.tgMuted)
+            }
         }
     }
 
@@ -186,5 +220,44 @@ struct StatsView: View {
             .chartXScale(domain: 0...1)
             .frame(height: 140)
         }
+    }
+}
+
+
+/// A bar that grows left for strokes lost and right for strokes gained.
+struct SGBarRow: View {
+    let label: String
+    let value: Double
+    let scale: Double
+    let rounds: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(label).font(.subheadline)
+                Text("\(rounds) round\(rounds == 1 ? "" : "s")").font(.caption2).foregroundStyle(Color.tgMuted)
+            }
+            .frame(width: 96, alignment: .leading)
+            GeometryReader { proxy in
+                let half = proxy.size.width / 2
+                let width = min(half, half * abs(value) / scale)
+                ZStack(alignment: .leading) {
+                    Rectangle().fill(Color.tgLine).frame(width: 1).offset(x: half)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(value < 0 ? Color.tgLoss : Color.tgAccent)
+                        .frame(width: width, height: 14)
+                        .offset(x: value < 0 ? half - width : half)
+                }
+                .frame(maxHeight: .infinity)
+            }
+            .frame(height: 30)
+            Text(String(format: "%+.1f", value))
+                .font(.subheadline.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(value < 0 ? Color.tgLoss : Color.tgAccent)
+                .frame(width: 44, alignment: .trailing)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(String(format: "%+.1f", value)) strokes per round")
     }
 }

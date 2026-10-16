@@ -82,7 +82,12 @@ struct PlayView: View {
             #if DEBUG
             .onAppear {
                 // Used by the CI screenshot step to open the scoring screen.
-                guard ProcessInfo.processInfo.arguments.contains("-openRound"), activeRound == nil,
+                let args = ProcessInfo.processInfo.arguments
+                if args.contains("-osmDemo") {
+                    Task { await openOSMDemo() }
+                    return
+                }
+                guard args.contains("-openRound"), activeRound == nil,
                       let course = courses.first else { return }
                 activeRound = openRounds.first
                     ?? Round.start(course: course, handicapIndex: Handicap.currentIndex(completedRounds.map(\.data)), in: context)
@@ -92,6 +97,23 @@ struct PlayView: View {
     }
 }
 
+#if DEBUG
+extension PlayView {
+    /// Downloads a real, well-mapped course from OpenStreetMap and opens hole 1 in Detailed mode.
+    func openOSMDemo() async {
+        guard activeRound == nil else { return }
+        let pars = [4, 4, 4, 4, 5, 4, 4, 3, 4, 4, 3, 4, 4, 5, 4, 4, 4, 4]
+        let holes = pars.enumerated().map { CourseHole(number: $0.offset + 1, par: $0.element, strokeIndex: $0.offset + 1, yards: 0) }
+        let course = Course(name: "Old Course (map test)", teeName: "White", courseRating: 72.0, slope: 132, holes: holes)
+        if let geo = try? await CourseMapService.download(around: GeoPoint(lat: 56.3445, lon: -2.8090), radius: 1500) {
+            course.geo = geo
+        }
+        context.insert(course)
+        activeRound = Round.start(course: course, handicapIndex: nil, in: context, mode: "detailed")
+    }
+}
+#endif
+
 struct StartRoundSheet: View {
     let course: Course
     let handicapIndex: Double?
@@ -99,11 +121,14 @@ struct StartRoundSheet: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @State private var mode = "quick"
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 20) {
                 Text(course.name).font(.title2.weight(.semibold))
+
+                SegmentedPicker(options: ["quick", "detailed"], selection: $mode) { $0 == "quick" ? "Quick" : "Detailed" }
 
                 Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 10) {
                     row("Tees", course.teeName)
@@ -115,14 +140,15 @@ struct StartRoundSheet: View {
                     }
                 }
 
-                Text("Quick mode: enter score, putts, fairway, green and up and down for each hole. GPS and Detailed mode arrive in Phase 2.")
+                Text(modeHelp)
                     .font(.footnote)
                     .foregroundStyle(Color.tgMuted)
 
                 Spacer()
 
                 Button("Tee off") {
-                    let round = Round.start(course: course, handicapIndex: handicapIndex, in: context)
+                    let round = Round.start(course: course, handicapIndex: handicapIndex, in: context, mode: mode)
+                    if mode == "detailed" { LocationManager.shared.start() }
                     dismiss()
                     onStart(round)
                 }
@@ -136,6 +162,14 @@ struct StartRoundSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    private var modeHelp: String {
+        if mode == "quick" {
+            return "Quick mode: enter score, putts, fairway, green and up and down for each hole."
+        }
+        let map = course.geo?.summary ?? "No map data"
+        return "Detailed mode: GPS yardages and a shot marker on each hole, for club distances and strokes gained. Map: \(map). You can set any missing green as you play."
     }
 
     private func row(_ title: String, _ value: String) -> some View {

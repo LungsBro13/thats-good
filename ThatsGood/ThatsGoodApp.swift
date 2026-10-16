@@ -8,7 +8,7 @@ struct ThatsGoodApp: App {
             RootView()
                 .tint(Color.tgAccent)
         }
-        .modelContainer(for: [Course.self, Round.self, HoleScore.self])
+        .modelContainer(for: [Course.self, Round.self, HoleScore.self, Shot.self, Club.self])
     }
 }
 
@@ -69,5 +69,5 @@ struct RootView: View {
 
 #Preview {
     RootView()
-        .modelContainer(for: [Course.self, Round.self, HoleScore.self], inMemory: true)
+        .modelContainer(for: [Course.self, Round.self, HoleScore.self, Shot.self, Club.self], inMemory: true)
 }
