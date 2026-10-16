@@ -4,6 +4,7 @@ import SwiftData
 struct ScoringView: View {
     @Bindable var round: Round
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
 
     @State private var holeNumber: Int
     @State private var showSummary = false
@@ -114,6 +115,7 @@ struct ScoringView: View {
     private func finish() {
         round.isComplete = true
         showSummary = true
+        Task { await Backend.shared.sync(context: context) }  // share with friends if signed in
     }
 }
 

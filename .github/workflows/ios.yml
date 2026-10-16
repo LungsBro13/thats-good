@@ -87,7 +87,12 @@ jobs:
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag
           sleep 6
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/bag-clubs.png"
-          echo "::notice title=Launch::App opened all tabs, the scoring screen and Detailed mode without crashing"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab friends -socialDemo
+          sleep 6
+          xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running on the Friends tab"; exit 1; }
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/friends.png"
+          echo "::notice title=Launch::App opened all tabs, the scoring screen, Detailed mode and Friends without crashing"
 
       - name: Save screenshots to the ci-screens branch
         if: startsWith(github.ref, 'refs/heads/phase-')

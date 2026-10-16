@@ -188,5 +188,26 @@ check(close(clubs[1].average, 160) && close(clubs[1].median, 160) && clubs[1].co
 check(close(clubs[0].median, 255), "even-count median")
 check(close(clubs[1].spread, (200.0 / 3).squareRoot()), "spread is the standard deviation")
 
+// Friends' progress and leaderboards
+let progressRounds = (0..<8).map { i in
+    makeRound(strokes: pars.map { $0 + (i < 4 ? 1 : 0) }, daysAgo: Double(200 - i * 20))  // 4 bogey rounds, then 4 level par
+}
+let now = Date(timeIntervalSince1970: 1_700_000_000)
+let progress = PlayerProgress.compute(progressRounds, now: now, periodDays: 90)
+check(progress.roundCount == 8, "progress counts rounds")
+check(progress.bestRound == 72, "best round is level par")
+check(close(progress.handicap, 0), "8 rounds: lowest 2 differentials (0) average 0")
+// 90 days ago (cutoff at day 90): rounds at 200,180,160,140,120,100 days ago are older -> 4 bogey + 2 par
+check(close(progress.handicapChange, 0 - (-1.0)), "handicap change is now minus 90 days ago")
+check(progress.trend.count == 6, "trend has a point per round once 3 are played")
+
+let board = Leaderboard.rank(["me": progress,
+                              "tom": PlayerProgress(handicap: 4.8, handicapChange: 0.2, averageScore: 75, averageScoreChange: nil, bestRound: 70, roundCount: 30, trend: []),
+                              "new": PlayerProgress(handicap: nil, handicapChange: nil, averageScore: nil, averageScoreChange: nil, bestRound: nil, roundCount: 0, trend: [])],
+                             by: .handicap)
+check(board.map(\.id) == ["me", "tom"], "handicap board: lowest first, players without one left out")
+check(Leaderboard.rank(["a": progress, "b": PlayerProgress(handicap: 1, handicapChange: nil, averageScore: nil, averageScoreChange: nil, bestRound: 75, roundCount: 30, trend: [])], by: .rounds).first?.id == "b",
+      "rounds board: most first")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)

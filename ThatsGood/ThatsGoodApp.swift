@@ -35,8 +35,12 @@ struct RootView: View {
            (try? context.fetchCount(FetchDescriptor<Course>(predicate: #Predicate { $0.name == "Demo Golf Club" }))) == 0 {
             SampleData.load(into: context)
         }
+        if args.contains("-socialDemo") {
+            Backend.shared.loadDemo()
+        }
         if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
             switch args[i + 1] {
+            case "friends": tab = .friends
             case "play": tab = .play
             case "stats": tab = .stats
             case "bag": tab = .bag
@@ -51,8 +55,7 @@ struct RootView: View {
             HomeView(selectedTab: $tab)
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(AppTab.home)
-            ComingSoonView(title: "Friends",
-                           message: "Friends, rivalries, side matches, leaderboards and live tournaments arrive in Phase 3.")
+            FriendsView()
                 .tabItem { Label("Friends", systemImage: "person.2") }
                 .tag(AppTab.friends)
             PlayView()
