@@ -3,7 +3,7 @@ import Supabase
 
 private struct CatalogRequest: Encodable, Sendable {
     var query: String?
-    var id: Int?
+    var id: String?
 }
 
 private struct CatalogResponse: Decodable, Sendable {
@@ -61,7 +61,7 @@ extension Backend {
         try await signedInAPI().catalog(CatalogRequest(query: query))
     }
 
-    func catalogCourse(_ id: Int) async throws -> CatalogCourse? {
+    func catalogCourse(_ id: String) async throws -> CatalogCourse? {
         try await signedInAPI().catalog(CatalogRequest(id: id)).first
     }
 

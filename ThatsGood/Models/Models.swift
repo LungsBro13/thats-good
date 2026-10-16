@@ -10,7 +10,8 @@ final class Course {
     var holes: [CourseHole]
     var createdAt: Date
     var geoData: Data? = nil  // CourseGeo as JSON (OpenStreetMap areas and greens the player marked)
-    var catalogID: Int? = nil  // GolfCourseAPI id when the course came from the course search
+    var catalogID: Int? = nil  // unused: GolfCourseAPI ids turned out to be text, see catalogKey
+    var catalogKey: String? = nil  // GolfCourseAPI id when the course came from the course search
     var centerLat: Double? = nil
     var centerLon: Double? = nil
     @Relationship(deleteRule: .nullify, inverse: \Round.course) var rounds: [Round] = []
@@ -32,7 +33,7 @@ final class Course {
     }
 
     /// Key for the shared map on the server, when the course came from the catalog.
-    var mapKey: String? { catalogID.map { "gc:\($0)" } }
+    var mapKey: String? { catalogKey.map { "gc:\($0)" } }
 }
 
 /// A round keeps its own copy of the course details, so editing a course never changes old rounds.

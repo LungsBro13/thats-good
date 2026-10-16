@@ -2,7 +2,7 @@ import Foundation
 
 /// A course from the shared catalog (GolfCourseAPI, tidied by the course-search edge function).
 struct CatalogCourse: Codable, Identifiable, Hashable, Sendable {
-    var id: Int
+    var id: String
     var club: String
     var course: String
     var city: String?

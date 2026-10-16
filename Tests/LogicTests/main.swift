@@ -483,9 +483,9 @@ check(guessed.strokeIndexGuessed && Set(guessed.holes.map(\.strokeIndex)) == Set
 check(guessed.holes[8].strokeIndex == 1 && guessed.holes[17].strokeIndex == 2, "catalog: longest front-nine hole is SI 1, back nine SI 2")
 check(CourseCatalog.holes(for: CatalogTee(name: "x", gender: "male", holes: [])).holes.count == 18, "catalog: no holes gives an 18-hole card to fill in")
 
-let club = CatalogCourse(id: 1, club: "Royal Auckland and Grange", course: "Grange/Middlemore", tees: [goodTee])
+let club = CatalogCourse(id: "1", club: "Royal Auckland and Grange", course: "Grange/Middlemore", tees: [goodTee])
 check(club.displayName == "Royal Auckland and Grange – Grange/Middlemore", "catalog: club and course name")
-check(CatalogCourse(id: 2, club: "Chisholm Links", course: "Chisholm Links", tees: []).displayName == "Chisholm Links", "catalog: same club and course name once")
+check(CatalogCourse(id: "2", club: "Chisholm Links", course: "Chisholm Links", tees: []).displayName == "Chisholm Links", "catalog: same club and course name once")
 
 
 // MARK: Round Wrapped
