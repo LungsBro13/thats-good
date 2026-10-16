@@ -5,3 +5,26 @@ An iPhone golf app: scorecard, handicap, GPS, Strokes Gained stats, and a big so
 - Product spec and decisions: [`docs/SPEC.md`](docs/SPEC.md)
 - Database design: [`db/schema.sql`](db/schema.sql)
 - Design mockup screens: [`design/mockup/`](design/mockup/) (live version: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU)
+
+## Run it on your iPhone
+
+1. Open **GitHub Desktop**, click **Fetch origin**, and switch to the branch you want (e.g. `phase-1`).
+2. Double-click **`ThatsGood.xcodeproj`** to open it in Xcode.
+3. Click **ThatsGood** at the top of the left sidebar, then the **Signing & Capabilities** tab. Under **Team**, pick your Apple ID (choose **Add an Account** the first time).
+4. Plug in your iPhone and pick it at the top of the Xcode window.
+5. Press **▶ Run**.
+6. The first time, go to **Settings → General → VPN & Device Management** on the iPhone and trust your developer certificate.
+
+If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to something unique in the same tab.
+
+## Phase 1 (done)
+
+- Home: handicap estimate with trend, last round, recent rounds
+- Play: add a course from its scorecard, Quick mode scoring for each hole, round summary with scorecard
+- Stats: last 5 / 10 / 20 / all rounds, score trend, key numbers, scoring by par type, score mix, green misses
+- Bag: courses, demo rounds, delete data
+- Friends: placeholder until Phase 3
+
+## Checks
+
+Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), an Xcode build, and, on `phase-1`, a simulator launch that saves screenshots to the `ci-screens` branch.
