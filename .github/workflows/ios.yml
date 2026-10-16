@@ -15,8 +15,14 @@ jobs:
 
       - name: Logic tests
         run: |
-          swiftc ThatsGood/Logic/*.swift Tests/LogicTests/main.swift -o "$RUNNER_TEMP/logic-tests"
           set +e
+          swiftc ThatsGood/Logic/*.swift Tests/LogicTests/main.swift -o "$RUNNER_TEMP/logic-tests" > "$RUNNER_TEMP/swiftc.log" 2>&1
+          compiled=$?
+          cat "$RUNNER_TEMP/swiftc.log"
+          if [ $compiled -ne 0 ]; then
+            grep -E "error:" "$RUNNER_TEMP/swiftc.log" | sort -u | head -10 | while read -r line; do echo "::error title=Logic compile::$line"; done
+            exit $compiled
+          fi
           "$RUNNER_TEMP/logic-tests" > "$RUNNER_TEMP/tests.log" 2>&1
           status=$?
           set -e
