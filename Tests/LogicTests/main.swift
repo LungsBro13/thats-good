@@ -373,10 +373,10 @@ let strokeScores: TourScores = [
     "r1": ["p1": card([1, 1] + Array(repeating: 0, count: 16)), "p2": card(Array(repeating: 0, count: 18))],
     "r2": ["p1": card([-1, 0, 0]), "p2": card([1, 1])],
 ]
-let board = TournamentEngine.leaderboard(two, strokeScores)
-check(board.currentRound == 2 && board.rows.map(\.key) == ["p1", "p2"], "leader after two rounds")
-check(board.rows[0].today == -1 && board.rows[0].thru == 3 && board.rows[0].total == 1, "today, thru and total")
-check(board.rows[0].movement == 1 && board.rows[1].movement == -1, "movement since last round")
+let twoBoard = TournamentEngine.leaderboard(two, strokeScores)
+check(twoBoard.currentRound == 2 && twoBoard.rows.map(\.key) == ["p1", "p2"], "leader after two rounds")
+check(twoBoard.rows[0].today == -1 && twoBoard.rows[0].thru == 3 && twoBoard.rows[0].total == 1, "today, thru and total")
+check(twoBoard.rows[0].movement == 1 && twoBoard.rows[1].movement == -1, "movement since last round")
 
 // Team stroke play, best 2 per hole
 let teamTour = tour(.stroke, .teams, players: [tp("a1", team: 0), tp("a2", team: 0), tp("a3", team: 0), tp("b1", team: 1), tp("b2", team: 1)])
