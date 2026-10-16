@@ -62,6 +62,23 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
 2. GPS, rangefinder, Detailed mode, club distances, Strokes Gained
 3. Accounts, friends, side matches, rivalries, leaderboards, tournaments with live scoring
 4. Smart caddie and practice plan
+5. AI swing analyser (see below)
+
+## Phase 5: AI swing analyser
+
+- The player films a swing in slow motion on a tripod, face-on or down the line.
+- Apple's on-device body tracking (Vision framework, 2D and 3D body pose) finds the joints in every frame. It's free and needs no server.
+- Measures: tempo ratio, head movement, spine angle (early extension), hip and shoulder turn, lead arm at the top, and key positions (address, top, impact, finish) picked automatically.
+- Side by side and overlay comparison against the player's own best swing.
+- AI coaching (Claude) turns the measurements into plain advice and drills. There's a small cost per swing; check pricing before building.
+- Key differentiator: link swing faults to on-course stats, e.g. approaches missing short and right plus early extension.
+- Limits: no ball data (speed, spin, launch) without a launch monitor; club face and path are rough; results depend on camera angle; 2D rotation is an estimate; present the output as guidance, not a guarantee.
+
+## Later ideas
+
+- Apple Watch app: yardages and swing tempo from the watch's motion sensors
+- AI caddie chat that answers from the player's own data
+- Import launch monitor data (Garmin, Rapsodo) where those apps allow export
 
 ## Still to decide
 
