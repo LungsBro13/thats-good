@@ -44,6 +44,8 @@ final class Round {
     @Relationship(deleteRule: .cascade, inverse: \HoleScore.round) var scores: [HoleScore] = []
     @Relationship(deleteRule: .cascade, inverse: \Shot.round) var shots: [Shot] = []
     var course: Course?
+    var remoteID: UUID?    // id on the server, set on first upload
+    var uploadedAt: Date?  // nil = not shared with friends yet
 
     init(course: Course, handicapIndex: Double?, playedOn: Date) {
         self.playedOn = playedOn
