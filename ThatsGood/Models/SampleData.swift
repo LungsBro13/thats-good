@@ -47,7 +47,7 @@ enum SampleData {
 
         let penalty = roll() < 0.03 ? 1 : 0
         score.penalties = penalty
-        let girChance = 0.44 + 0.12 * skill - (fairwayMissed ? 0.14 : 0)
+        let girChance = 0.38 + 0.10 * skill - (fairwayMissed ? 0.14 : 0)
 
         if roll() < girChance {
             score.greenResult = .hit
@@ -59,7 +59,7 @@ enum SampleData {
         } else {
             let r = roll()
             score.greenResult = r < 0.36 ? .short : (r < 0.66 ? .right : (r < 0.86 ? .left : .long))
-            if roll() < 0.38 + 0.12 * skill {
+            if roll() < 0.32 + 0.10 * skill {
                 score.upAndDown = true
                 score.putts = 1
                 score.firstPuttFeet = Int.random(in: 2...9, using: &rng)

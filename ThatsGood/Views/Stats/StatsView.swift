@@ -113,7 +113,7 @@ struct StatsView: View {
     private func keyNumbers(_ s: StatSummary) -> some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 0) {
             StatTile(title: "Average score", value: formatDecimal(s.averageScore),
-                     detail: s.averageToPar.map { "\(formatDecimal($0)) to par" })
+                     detail: s.averageToPar.map { String(format: "%+.1f to par", $0) })
             StatTile(title: "Putts per round", value: formatDecimal(s.puttsPerRound))
             StatTile(title: "Fairways hit", value: formatPercent(s.fairwayPct),
                      detail: "Left \(formatPercent(s.fairwayLeftPct)) · Right \(formatPercent(s.fairwayRightPct))")

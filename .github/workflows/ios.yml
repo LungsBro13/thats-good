@@ -55,7 +55,12 @@ jobs:
             xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running after opening the $tab tab"; exit 1; }
             xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/$tab.png"
           done
-          echo "::notice title=Launch::App opened all 4 tabs without crashing"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood 2>/dev/null || true
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -demoData -tab play -openRound
+          sleep 6
+          xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running after opening a round"; exit 1; }
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/scoring.png"
+          echo "::notice title=Launch::App opened all 4 tabs and the scoring screen without crashing"
 
       - name: Save screenshots to the ci-screens branch
         if: github.ref == 'refs/heads/phase-1'

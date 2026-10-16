@@ -79,6 +79,15 @@ struct PlayView: View {
             .sheet(isPresented: $addingCourse) {
                 CourseEditorView()
             }
+            #if DEBUG
+            .onAppear {
+                // Used by the CI screenshot step to open the scoring screen.
+                guard ProcessInfo.processInfo.arguments.contains("-openRound"), activeRound == nil,
+                      let course = courses.first else { return }
+                activeRound = openRounds.first
+                    ?? Round.start(course: course, handicapIndex: Handicap.currentIndex(completedRounds.map(\.data)), in: context)
+            }
+            #endif
         }
     }
 }
