@@ -597,7 +597,7 @@ struct TournamentLobby: View {
     private func row(_ p: TournamentPlayerDTO, all: [TournamentPlayerDTO], setup: TourSetup) -> some View {
         let i = all.firstIndex(of: p) ?? 0
         return HStack(spacing: 10) {
-            Text(p.userID == backend.myID ? "\(p.name) (you)" : p.name).font(.body.weight(.semibold)).lineLimit(1)
+            Text(p.userID == backend.myID && p.name != "You" ? "\(p.name) (you)" : p.name).font(.body.weight(.semibold)).lineLimit(1)
             if p.userID == nil { Text("guest").font(.caption).foregroundStyle(Color.tgMuted) }
             Spacer()
             Text(p.handicapIndex.map { formatDecimal($0) } ?? "–").foregroundStyle(Color.tgMuted).monospacedDigit()

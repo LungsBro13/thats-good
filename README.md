@@ -61,6 +61,17 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
 - Results are worked out from the raw scores (`ThatsGood/Logic/MatchEngine.swift`, tested)
 - All-time head-to-head record, form and record by format on each friend's page and in the Friends hub
 
+## Phase 3c (done): tournaments
+
+- Server tables: `supabase/migrations/003_tournaments.sql` (run it in the SQL Editor once, after 001 and 002)
+- Friends → Tournaments → **New**: stroke or match play; individual, pairs (fourball, foursomes, scramble)
+  or two teams (Ryder Cup style sessions); net or gross with the official allowances; 1 to 4 rounds of stroke play
+- Lobby: share the join code, add guests, set the draw and teams (arrows, shuffle or balance by handicap), then **Start**
+- Live boards: stroke leaderboard (today, thru, total, movement, gross or net), team points with projected score and
+  session tabs, knockout bracket with sudden death; live feed of birdies and finished rounds
+- Any player enters scores for their group or match (**Enter scores**); everyone's board updates every few seconds
+- Results come from the raw scores (`ThatsGood/Logic/Tournament.swift`, tested)
+
 ## Checks
 
 Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), an Xcode build, and, on `phase-*` branches, a simulator launch (including Detailed mode on the Old Course from OpenStreetMap) that saves screenshots to the `ci-screens` branch.

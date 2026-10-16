@@ -428,7 +428,8 @@ extension Backend {
             let start = Date.now.addingTimeInterval(-3 * 3600)
             let stamp = ISO8601DateFormatter()
             for (g, group) in TournamentEngine.scoringGroups(live.setup, live.table).enumerated() {
-                let existing = live.scores.filter { $0.game == group.game }
+                let unitKeys = Set(group.units.map(\.key))
+                let existing = live.scores.filter { $0.game == group.game && unitKeys.contains($0.unit) }
                 if !existing.isEmpty {
                     if group.holes.count > live.setup.holes.count, let extra = group.holes.last,
                        !existing.contains(where: { $0.hole == extra.number }) {
