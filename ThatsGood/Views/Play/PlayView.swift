@@ -114,6 +114,12 @@ extension PlayView {
         } catch {
             course.name = "Map failed: \(error.localizedDescription)"
         }
+        // If the map server is down or misses the 1st green, put it in by hand so the caddie still shows.
+        if course.geo?.hole(1) == nil {
+            var geo = course.geo ?? CourseGeo()
+            geo.setGreen(hole: 1, at: GeoPoint(lat: 56.3445, lon: -2.8075))
+            course.geo = geo
+        }
     }
 }
 #endif

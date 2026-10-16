@@ -394,5 +394,46 @@ let feedItems = TournamentEngine.feed(two, strokeScores, events: [
 ])
 check(feedItems.first?.text == "birdie on 1" && feedItems.first?.name == "P1", "feed shows birdies")
 
+
+// MARK: Smart caddie
+
+let emptyModel = PlayerModel.build([])
+check(close(emptyModel.expected(.fairway, 150), StrokesGained.expected(.fairway, 150)), "no data: the caddie uses the baseline")
+
+let oneHole = HoleData(par: 4, strokeIndex: 1, strokes: 4, putts: 2, firstPuttFeet: 12, fairway: .hit, green: .hit,
+                       upAndDown: nil, penalties: 0, shots: [ShotData(lie: .tee, distance: 400), ShotData(lie: .fairway, distance: 150)])
+let builtModel = PlayerModel.build([RoundData(date: .now, courseRating: 72, slope: 113, handicapIndex: nil, holes: [oneHole])])
+check(builtModel.shotCount == 2 && close(builtModel.overall, (0.01 + 0.055) / 2), "player model: strokes to hole out against baseline")
+
+let bagYards = Caddie.yardages(bag: ["Dr", "7i", "8i", "PW"],
+                               measured: [ClubDistance(club: "7i", count: 5, average: 158, median: 157, spread: 6),
+                                          ClubDistance(club: "8i", count: 2, average: 170, median: 170, spread: 6)])
+check(bagYards.first { $0.club == "7i" } == ClubYardage(club: "7i", yards: 157, fromData: true), "own median once a club has 3 shots")
+check(bagYards.first { $0.club == "8i" }?.fromData == false, "typical yardage until then")
+
+let fullBag = Caddie.yardages(bag: Array(Caddie.typicalYards.keys), measured: [])
+check(Caddie.club(for: 158, clubs: Caddie.usable(fullBag, lie: .fairway))?.club == "7i", "158 yards is a 7 iron")
+check(Caddie.club(for: 300, clubs: Caddie.usable(fullBag, lie: .fairway))?.club == "3W", "too far: longest club, no driver off the deck")
+
+var layupModel = PlayerModel.empty
+layupModel.overall = 0.2
+layupModel.shotCount = 60
+for i in layupModel.bands.indices {
+    if layupModel.bands[i].lower == 210 { layupModel.bands[i].shots = 30; layupModel.bands[i].totalDiff = 18 }
+    if layupModel.bands[i].lower == 90 { layupModel.bands[i].shots = 30; layupModel.bands[i].totalDiff = -9 }
+}
+let layupAdvice = Caddie.advise(distance: 225, lie: .fairway, model: layupModel, clubs: fullBag)
+check(layupAdvice.recommendsLayup && layupAdvice.layup?.club == "PW", "weak from 225, strong from 100: lay up with PW")
+check(layupModel.favouriteBand?.lower == 90, "favourite distance is the 90–120 band")
+check(!Caddie.advise(distance: 225, lie: .fairway, model: emptyModel, clubs: fullBag).recommendsLayup, "baseline player goes for it")
+
+// Practice plan: lots of 3-putts from 10 ft
+let puttHole = HoleData(par: 4, strokeIndex: 1, strokes: 5, putts: 3, firstPuttFeet: 10, fairway: .hit, green: .hit,
+                        upAndDown: nil, penalties: 0)
+let puttRound = RoundData(date: .now, courseRating: 72, slope: 113, handicapIndex: nil, holes: Array(repeating: puttHole, count: 18))
+let plan = PracticePlan.build([puttRound])
+check(plan.first?.category == .putting && plan.first?.focus == "Putts from 7–20 ft", "practice plan finds the putting leak")
+check(PracticePlan.build([]).isEmpty, "no data, no plan")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)
