@@ -13,10 +13,24 @@ jobs:
       - name: Logic tests
         run: |
           swiftc ThatsGood/Logic/*.swift Tests/LogicTests/main.swift -o "$RUNNER_TEMP/logic-tests"
-          "$RUNNER_TEMP/logic-tests"
+          set +e
+          "$RUNNER_TEMP/logic-tests" > "$RUNNER_TEMP/tests.log" 2>&1
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/tests.log"
+          grep "^FAIL" "$RUNNER_TEMP/tests.log" | head -10 | while read -r line; do echo "::error title=Logic test::$line"; done
+          echo "::notice title=Logic tests::$(tail -1 "$RUNNER_TEMP/tests.log")"
+          exit $status
 
       - name: Build app for the simulator
         run: |
+          set +e
           xcodebuild -project ThatsGood.xcodeproj -target ThatsGood -sdk iphonesimulator \
-            -configuration Debug build CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
-          grep -q "BUILD SUCCEEDED" "$RUNNER_TEMP/build.log"
+            -configuration Debug build CODE_SIGNING_ALLOWED=NO > "$RUNNER_TEMP/build.log" 2>&1
+          status=$?
+          set -e
+          grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" "$RUNNER_TEMP/build.log" || true
+          grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u | head -10 | while read -r line; do echo "::error title=Build::$line"; done
+          grep -E "\.swift:[0-9]+:[0-9]+: warning:" "$RUNNER_TEMP/build.log" | sort -u | head -10 | while read -r line; do echo "::warning title=Build::$line"; done
+          echo "::notice title=Build::Xcode $(xcodebuild -version | head -1), exit $status, $(grep -cE '\.swift:[0-9]+:[0-9]+: warning:' "$RUNNER_TEMP/build.log") Swift warnings, $(grep -oE 'BUILD (SUCCEEDED|FAILED)' "$RUNNER_TEMP/build.log" | tail -1)"
+          exit $status
