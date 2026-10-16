@@ -107,8 +107,12 @@ extension PlayView {
         let course = Course(name: "Old Course (map test)", teeName: "White", courseRating: 72.0, slope: 132, holes: holes)
         context.insert(course)
         activeRound = Round.start(course: course, handicapIndex: nil, in: context, mode: "detailed")
-        if let geo = try? await CourseMapService.download(around: GeoPoint(lat: 56.3445, lon: -2.8090), radius: 1500) {
+        do {
+            let geo = try await CourseMapService.download(around: GeoPoint(lat: 56.3445, lon: -2.8090), radius: 1500)
             course.geo = geo
+            course.name = "Old Course · \(geo.summary)"
+        } catch {
+            course.name = "Map failed: \(error.localizedDescription)"
         }
     }
 }
