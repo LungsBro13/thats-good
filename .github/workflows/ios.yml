@@ -31,6 +31,17 @@ jobs:
           echo "::notice title=Logic tests::$(tail -1 "$RUNNER_TEMP/tests.log")"
           exit $status
 
+      - name: Edge function tests
+        run: |
+          set +e
+          node --experimental-strip-types Tests/EdgeFunctions/course_search_test.ts > "$RUNNER_TEMP/edge.log" 2>&1
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/edge.log"
+          grep -E "^FAIL|rror" "$RUNNER_TEMP/edge.log" | grep -v ExperimentalWarning | head -10 | while read -r line; do echo "::error title=Edge function test::$line"; done
+          echo "::notice title=Edge function tests::$(tail -1 "$RUNNER_TEMP/edge.log")"
+          exit $status
+
       - name: Build app for the simulator
         run: |
           set +e
@@ -102,6 +113,10 @@ jobs:
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag -importSample
           sleep 6
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/import.png"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag -catalogDemo
+          sleep 6
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/course-search.png"
           xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab friends -socialDemo
           sleep 6

@@ -309,6 +309,7 @@ struct DetailedHoleView: View {
         var updated = course.geo ?? CourseGeo()
         updated.setGreen(hole: holeNumber, at: point)
         course.geo = updated
+        if let key = course.mapKey { Task { await Backend.shared.shareMap(key, updated) } }
         settingGreen = false
         camera = initialCamera()
     }

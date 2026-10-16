@@ -467,5 +467,25 @@ let importedTwenty = diffs.enumerated().map { i, d in
 }
 check(close(Handicap.currentIndex([], imported: importedTwenty), 8.3), "best 8 of 20 imported differentials: 8.3")
 
+
+// MARK: Course catalog
+
+let goodTee = CatalogTee(name: "Blue", gender: "male", rating: 69.7, slope: 118, par: 70, yards: 6100,
+                         holes: (0..<18).map { CatalogHole(par: pars[$0], yards: 300 + $0, si: strokeIndexes[$0]) })
+let goodHoles = CourseCatalog.holes(for: goodTee)
+check(!goodHoles.strokeIndexGuessed && goodHoles.holes.map(\.strokeIndex) == strokeIndexes, "catalog: stroke indexes kept")
+check(goodHoles.holes[3].par == 5 && goodHoles.holes[3].yards == 303, "catalog: par and yards per hole")
+
+var noSI = goodTee
+noSI.holes = (0..<18).map { CatalogHole(par: 4, yards: 300 + $0 * 10, si: nil) }
+let guessed = CourseCatalog.holes(for: noSI)
+check(guessed.strokeIndexGuessed && Set(guessed.holes.map(\.strokeIndex)) == Set(1...18), "catalog: missing SI is guessed, each used once")
+check(guessed.holes[8].strokeIndex == 1 && guessed.holes[17].strokeIndex == 2, "catalog: longest front-nine hole is SI 1, back nine SI 2")
+check(CourseCatalog.holes(for: CatalogTee(name: "x", gender: "male", holes: [])).holes.count == 18, "catalog: no holes gives an 18-hole card to fill in")
+
+let club = CatalogCourse(id: 1, club: "Royal Auckland and Grange", course: "Grange/Middlemore", tees: [goodTee])
+check(club.displayName == "Royal Auckland and Grange – Grange/Middlemore", "catalog: club and course name")
+check(CatalogCourse(id: 2, club: "Chisholm Links", course: "Chisholm Links", tees: []).displayName == "Chisholm Links", "catalog: same club and course name once")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)
