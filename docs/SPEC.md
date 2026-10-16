@@ -65,7 +65,7 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
 
 ## Still to decide
 
-1. Does the developer have a Mac with Xcode? This is needed to build and run the app.
+Nothing open. The developer has a Mac, so the app is built and run in Xcode.
 
 ## Secrets (never commit these)
 
