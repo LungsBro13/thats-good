@@ -1,0 +1,22 @@
+name: iOS build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Logic tests
+        run: |
+          swiftc ThatsGood/Logic/*.swift Tests/LogicTests/main.swift -o "$RUNNER_TEMP/logic-tests"
+          "$RUNNER_TEMP/logic-tests"
+
+      - name: Build app for the simulator
+        run: |
+          xcodebuild -project ThatsGood.xcodeproj -target ThatsGood -sdk iphonesimulator \
+            -configuration Debug build CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" "$RUNNER_TEMP/build.log"
