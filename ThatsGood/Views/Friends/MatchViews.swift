@@ -286,7 +286,7 @@ struct MatchView: View {
                                 .frame(width: 28, alignment: .leading)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(row.name).font(.body.weight(.semibold))
-                                Text("Gets \(handicaps[row.key] ?? 0) · \(row.detail)")
+                                Text("Gets \(handicaps[row.key] ?? 0)" + (row.detail.isEmpty ? "" : " · \(row.detail)"))
                                     .font(.caption)
                                     .foregroundStyle(Color.tgMuted)
                                     .lineLimit(1)

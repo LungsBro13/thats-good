@@ -52,6 +52,15 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
 3. Supabase → **Project Settings → API Keys**: copy the **Project URL** and the **publishable** key
    into the app's Friends tab → **Connect**. Never use the secret key in the app.
 
+## Phase 3b (done): side matches and rivalries
+
+- Server tables: `supabase/migrations/002_matches.sql` (run it in the SQL Editor once, after 001)
+- Friends → Matches → **New match**: stroke play, Stableford, skins (with carry-overs), match play, Nassau;
+  net or gross; full handicaps or official allowances; friends and guests
+- One person scores each hole for the group; everyone in the match sees it update every few seconds
+- Results are worked out from the raw scores (`ThatsGood/Logic/MatchEngine.swift`, tested)
+- All-time head-to-head record, form and record by format on each friend's page and in the Friends hub
+
 ## Checks
 
 Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), an Xcode build, and, on `phase-*` branches, a simulator launch (including Detailed mode on the Old Course from OpenStreetMap) that saves screenshots to the `ci-screens` branch.

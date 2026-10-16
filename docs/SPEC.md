@@ -62,8 +62,9 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
 2. GPS, rangefinder, Detailed mode, club distances, Strokes Gained
 3. Accounts, friends, side matches, rivalries, leaderboards, tournaments with live scoring
    - 3a done: accounts, friends, shared rounds, progress, leaderboards
-   - 3b next: side matches scored live and all-time rivalry records
-   - 3c: tournaments
+   - 3b done: side matches scored live and all-time rivalry records
+   - Later: link a match to the scorer's own Play round, so one round counts for both
+   - 3c next: tournaments
 4. Smart caddie and practice plan
 5. AI swing analyser (see below)
 
