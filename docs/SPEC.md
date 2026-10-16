@@ -68,7 +68,7 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
    - 3b done: side matches scored live and all-time rivalry records
    - Later: link a match to the scorer's own Play round, so one round counts for both
    - 3c done: tournaments (stroke or match; individual, pairs or two teams; live boards; join code)
-4. Smart caddie and practice plan
+4. Smart caddie and practice plan (done)
 5. AI swing analyser (see below)
 
 ## Phase 5: AI swing analyser
