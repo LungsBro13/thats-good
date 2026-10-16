@@ -97,8 +97,6 @@ struct RoundWrappedView: View {
             .frame(width: geo.size.width, height: geo.size.height)
             .background {
                 WrappedBackground(palette: palette)
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
                     .animation(.easeInOut(duration: 0.5), value: index)
             }
             .contentShape(Rectangle())
