@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-15
@@ -34,3 +37,34 @@ jobs:
           grep -E "\.swift:[0-9]+:[0-9]+: warning:" "$RUNNER_TEMP/build.log" | sort -u | head -10 | while read -r line; do echo "::warning title=Build::$line"; done
           echo "::notice title=Build::Xcode $(xcodebuild -version | head -1), exit $status, $(grep -cE '\.swift:[0-9]+:[0-9]+: warning:' "$RUNNER_TEMP/build.log") Swift warnings, $(grep -oE 'BUILD (SUCCEEDED|FAILED)' "$RUNNER_TEMP/build.log" | tail -1)"
           exit $status
+
+      - name: Launch in the simulator and take screenshots
+        if: github.ref == 'refs/heads/phase-1'
+        run: |
+          udid=$(xcrun simctl list devices available | grep -m1 -E "iPhone 16 \(" | grep -oE "[0-9A-F-]{36}")
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl ui "$udid" appearance dark
+          xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100
+          xcrun simctl install "$udid" build/Debug-iphonesimulator/ThatsGood.app
+          mkdir -p "$RUNNER_TEMP/shots"
+          for tab in home stats play bag; do
+            xcrun simctl terminate "$udid" com.lungsbro13.thatsgood 2>/dev/null || true
+            xcrun simctl launch "$udid" com.lungsbro13.thatsgood -demoData -tab "$tab"
+            sleep 6
+            xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running after opening the $tab tab"; exit 1; }
+            xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/$tab.png"
+          done
+          echo "::notice title=Launch::App opened all 4 tabs without crashing"
+
+      - name: Save screenshots to the ci-screens branch
+        if: github.ref == 'refs/heads/phase-1'
+        run: |
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-screens
+          git rm -rfq .
+          cp "$RUNNER_TEMP"/shots/*.png .
+          git add *.png
+          git commit -qm "Screenshots from ${GITHUB_SHA::7}"
+          git push -fq origin ci-screens

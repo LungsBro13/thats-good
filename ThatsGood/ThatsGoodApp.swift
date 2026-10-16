@@ -18,8 +18,34 @@ enum AppTab: Hashable {
 
 struct RootView: View {
     @State private var tab: AppTab = .home
+    @Environment(\.modelContext) private var context
 
     var body: some View {
+        tabs
+        #if DEBUG
+            .onAppear(perform: applyLaunchArguments)
+        #endif
+    }
+
+    #if DEBUG
+    /// Used by the CI screenshot step: `-demoData` loads demo rounds, `-tab stats` opens a tab.
+    private func applyLaunchArguments() {
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-demoData"), (try? context.fetchCount(FetchDescriptor<Round>())) == 0 {
+            SampleData.load(into: context)
+        }
+        if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
+            switch args[i + 1] {
+            case "play": tab = .play
+            case "stats": tab = .stats
+            case "bag": tab = .bag
+            default: tab = .home
+            }
+        }
+    }
+    #endif
+
+    private var tabs: some View {
         TabView(selection: $tab) {
             HomeView(selectedTab: $tab)
                 .tabItem { Label("Home", systemImage: "house") }
