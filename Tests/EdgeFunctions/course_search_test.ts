@@ -34,7 +34,7 @@ check(res.status === 500, "without the key the function says it isn't set up");
 // Full search path with a fake Deno and fake servers (GolfCourseAPI and the database).
 const calls: string[] = [];
 (globalThis as any).Deno = {
-  env: { get: (k: string) => ({ GOLFCOURSEAPI_KEY: " test-key\n", SUPABASE_URL: "https://db", SUPABASE_SERVICE_ROLE_KEY: "srv" } as any)[k] },
+  env: { get: (k: string) => ({ GOLFCOURSEAPI_KEY: " “test-key\u200b”\n", SUPABASE_URL: "https://db", SUPABASE_SERVICE_ROLE_KEY: "srv" } as any)[k] },
   serve: () => {},
 };
 (globalThis as any).fetch = async (url: string, init: any = {}) => {
@@ -49,7 +49,7 @@ const calls: string[] = [];
 const live = await import("../../supabase/functions/course-search/index.ts?live");
 const found = await live.handler(new Request("http://x", { method: "POST", body: JSON.stringify({ query: "Chisholm" }) }));
 const data = await found.json();
-check(found.status === 200 && data.courses.length === 1 && calls.length > 0 && data.courses[0].id === 4321, "search works, even with spaces and a line break around the key");
+check(found.status === 200 && data.courses.length === 1 && calls.length > 0 && data.courses[0].id === 4321, "search works, even with spaces, curly quotes and invisible characters around the key");
 check(calls.some((c) => c.includes("search_query=chisholm")), "search text is sent in lower case");
 check(calls.some((c) => c === "POST https://db/rest/v1/course_catalog"), "results are cached for everyone");
 const short = await live.handler(new Request("http://x", { method: "POST", body: JSON.stringify({ query: "ab" }) }));
