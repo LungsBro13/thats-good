@@ -32,6 +32,14 @@ check(normalizeCourse({ id: "a1B2c3", club_name: "Pebble Beach" })?.id === "a1B2
 const res = await handler(new Request("http://x", { method: "POST", body: "{}" }));
 check(res.status === 500, "without the key the function says it isn't set up");
 
+// Other tee layouts
+const listTees = normalizeCourse({ id: "x1", club_name: "C", tees: [{ name: "Blue", gender: "Ladies", rating: 70.1, slope: 120, holes: [] }] })!;
+check(listTees.tees[0].gender === "female" && listTees.tees[0].rating === 70.1 && listTees.note === undefined, "tees as one list with gender");
+const wrapped = normalizeCourse({ course: { id: 7, club_name: "W", tees: { men: [{ tee_name: "W", course_rating: 69, slope_rating: 113 }] } } })!;
+check(wrapped.id === "7" && wrapped.tees.length === 1, "a course wrapped in { course } and tees under other names");
+check((normalizeCourse({ id: "n", tees: { male: [{ tee_name: "Blue", par_total: 72 }] } })!.note ?? "").includes("first tee fields: tee_name, par_total"),
+      "when no tee has a rating, the note says what was sent");
+
 // Full search path with a fake Deno and fake servers (GolfCourseAPI and the database).
 const calls: string[] = [];
 (globalThis as any).Deno = {

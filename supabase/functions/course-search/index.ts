@@ -27,6 +27,7 @@ export type CatalogCourse = {
   lat: number | null;
   lon: number | null;
   tees: CatalogTee[];
+  note?: string;  // what the API sent, when no tee could be used
 };
 
 const num = (v: unknown): number | null => {
@@ -35,42 +36,64 @@ const num = (v: unknown): number | null => {
 };
 const text = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
-/** Turns one GolfCourseAPI course into the small shape the app reads. */
+/** Turns one GolfCourseAPI course into the small shape the app reads. Accepts a few layouts for tees. */
 export function normalizeCourse(raw: any): CatalogCourse | null {
+  if (raw?.course && !raw?.id) raw = raw.course;
   // GolfCourseAPI ids can be numbers or text: keep them as text.
   const id = typeof raw?.id === "number" ? String(raw.id) : text(raw?.id);
   if (!id) return null;
   const loc = raw?.location ?? {};
+  // Tees come as { male: [...], female: [...] }, or one list where each tee says its gender.
+  const lists: [string, any[]][] = [];
+  const t0 = raw?.tees;
+  if (Array.isArray(t0)) lists.push(["", t0]);
+  else if (t0 && typeof t0 === "object") for (const [k, v] of Object.entries(t0)) if (Array.isArray(v)) lists.push([k, v]);
+  const female = (s: unknown) => /fem|lad|wom/i.test(String(s ?? ""));
   const tees: CatalogTee[] = [];
-  for (const gender of ["male", "female"] as const) {
-    const list = Array.isArray(raw?.tees?.[gender]) ? raw.tees[gender] : [];
+  for (const [group, list] of lists) {
     for (const t of list) {
       const holes: CatalogHole[] = (Array.isArray(t?.holes) ? t.holes : []).map((h: any) => ({
         par: num(h?.par),
-        yards: num(h?.yardage ?? h?.yards),
-        si: num(h?.handicap ?? h?.stroke_index),
+        yards: num(h?.yardage ?? h?.yards ?? h?.distance),
+        si: num(h?.handicap ?? h?.stroke_index ?? h?.hcp ?? h?.si),
       }));
       tees.push({
-        name: text(t?.tee_name) || "Tees",
-        gender,
-        rating: num(t?.course_rating),
-        slope: num(t?.slope_rating),
-        par: num(t?.par_total),
-        yards: num(t?.total_yards),
+        name: text(t?.tee_name ?? t?.name ?? t?.teeName ?? t?.color) || "Tees",
+        gender: female(group) || female(t?.gender) ? "female" : "male",
+        rating: num(t?.course_rating ?? t?.rating ?? t?.courseRating),
+        slope: num(t?.slope_rating ?? t?.slope ?? t?.slopeRating),
+        par: num(t?.par_total ?? t?.par),
+        yards: num(t?.total_yards ?? t?.yards ?? t?.yardage),
         holes,
       });
     }
   }
-  return {
+  const course: CatalogCourse = {
     id,
-    club: text(raw?.club_name),
-    course: text(raw?.course_name),
+    club: text(raw?.club_name ?? raw?.club),
+    course: text(raw?.course_name ?? raw?.name),
     city: text(loc.city) || null,
     country: text(loc.country) || null,
-    lat: num(loc.latitude),
-    lon: num(loc.longitude),
+    lat: num(loc.latitude ?? loc.lat),
+    lon: num(loc.longitude ?? loc.lng ?? loc.lon),
     tees,
   };
+  if (!hasPlayableTee(course)) course.note = describeTees(t0);
+  return course;
+}
+
+export const hasPlayableTee = (c: CatalogCourse) => c.tees.some((t) => t.rating !== null && t.slope !== null);
+
+/** A short description of what the API sent for tees, shown when none could be used. */
+function describeTees(t: any): string {
+  if (t === undefined || t === null) return "no tees sent";
+  if (Array.isArray(t)) return `tees: list of ${t.length}` + (t[0] ? `; first tee fields: ${Object.keys(t[0]).slice(0, 10).join(", ")}` : "");
+  if (typeof t === "object") {
+    const parts = Object.entries(t).map(([k, v]) => `${k}${Array.isArray(v) ? `(${v.length})` : ""}`);
+    const first = Object.values(t).find((v) => Array.isArray(v) && v.length) as any[] | undefined;
+    return `tees: ${parts.join(", ")}` + (first ? `; first tee fields: ${Object.keys(first[0] ?? {}).slice(0, 10).join(", ")}` : "");
+  }
+  return `tees: ${typeof t}`;
 }
 
 // Deno globals, read through globalThis so the file also loads in Node for tests.
@@ -124,9 +147,9 @@ async function golfApi(path: string, key: string): Promise<any> {
 
 async function byId(id: string, key: string): Promise<CatalogCourse[]> {
   const cached = await db(`course_catalog?id=eq.${encodeURIComponent(id)}&select=data,fetched_at`);
-  if (Array.isArray(cached) && cached[0] && fresh(cached[0].fetched_at)) return [cached[0].data];
+  if (Array.isArray(cached) && cached[0] && fresh(cached[0].fetched_at) && hasPlayableTee(cached[0].data)) return [cached[0].data];
   const body = await golfApi(`/courses/${encodeURIComponent(id)}`, key);
-  const course = normalizeCourse(body?.course ?? body);
+  const course = normalizeCourse(body);
   if (!course) return [];
   await remember([course]);
   return [course];
@@ -142,7 +165,9 @@ async function search(query: string, key: string): Promise<CatalogCourse[]> {
     const rows = await db(`course_catalog?id=in.(${encodeURIComponent(list)})&select=data`);
     if (Array.isArray(rows) && rows.length === ids.length) {
       const byKey = new Map(rows.map((r: any) => [r.data.id, r.data]));
-      return ids.map((i) => byKey.get(i)).filter(Boolean) as CatalogCourse[];
+      const saved = ids.map((i) => byKey.get(i)).filter(Boolean) as CatalogCourse[];
+      if (saved.some(hasPlayableTee)) return saved;  // older saves without tees are looked up again
+
     }
   }
   const body = await golfApi(`/search?search_query=${encodeURIComponent(q)}`, key);
@@ -160,6 +185,16 @@ async function search(query: string, key: string): Promise<CatalogCourse[]> {
       throw new Error(`Course search got an unexpected answer (fields: ${Object.keys(body ?? {}).slice(0, 8).join(", ")}).`);
     }
     return [];
+  }
+  // Search results may leave tees out: ask for the full course, for the first few.
+  for (let i = 0; i < Math.min(courses.length, 5); i++) {
+    if (hasPlayableTee(courses[i])) continue;
+    try {
+      const full = normalizeCourse(await golfApi(`/courses/${encodeURIComponent(courses[i].id)}`, key));
+      if (full && (hasPlayableTee(full) || full.tees.length > courses[i].tees.length)) courses[i] = full;
+    } catch {
+      // keep the search result
+    }
   }
   await remember(courses);
   await db("course_search_cache", {
