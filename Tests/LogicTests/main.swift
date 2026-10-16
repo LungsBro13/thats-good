@@ -209,5 +209,13 @@ check(board.map(\.id) == ["me", "tom"], "handicap board: lowest first, players w
 check(Leaderboard.rank(["a": progress, "b": PlayerProgress(handicap: 1, handicapChange: nil, averageScore: nil, averageScoreChange: nil, bestRound: 75, roundCount: 30, trend: [])], by: .rounds).first?.id == "b",
       "rounds board: most first")
 
+// Server URL clean-up
+check(ServerURL.normalize("https://abcdefghijklmnop.supabase.co")?.absoluteString == "https://abcdefghijklmnop.supabase.co", "project URL kept")
+check(ServerURL.normalize("  https://abcdefghijklmnop.supabase.co/rest/v1/ ")?.absoluteString == "https://abcdefghijklmnop.supabase.co", "extra path and spaces removed")
+check(ServerURL.normalize("abcdefghijklmnop.supabase.co")?.absoluteString == "https://abcdefghijklmnop.supabase.co", "https added")
+check(ServerURL.normalize("https://supabase.com/dashboard/project/abcdefghijklmnop/settings/api-keys")?.absoluteString == "https://abcdefghijklmnop.supabase.co", "dashboard link turned into the project URL")
+check(ServerURL.normalize("https://supabase.com/dashboard") == nil, "the website itself is rejected")
+check(ServerURL.normalize("hello") == nil, "junk is rejected")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)

@@ -39,6 +39,8 @@ struct ConnectServerView: View {
                     .autocorrectionDisabled()
             } header: {
                 Text("Project URL")
+            } footer: {
+                Text("Supabase → Project Settings → Data API → Project URL. It looks like https://xxxx.supabase.co")
             }
             Section {
                 TextField("sb_publishable_… or the anon key", text: $key, axis: .vertical)
@@ -54,7 +56,7 @@ struct ConnectServerView: View {
                 Text(error).foregroundStyle(Color.tgLoss)
             }
             Button("Connect") {
-                error = backend.connect(url: url, key: key) ? nil : "That doesn't look right. Check the URL starts with https:// and the key is complete."
+                error = backend.connect(url: url, key: key) ? nil : "That doesn't look right. The URL should look like https://xxxx.supabase.co and the key should be the publishable one, not the secret one."
             }
             .disabled(url.isEmpty || key.isEmpty)
         }

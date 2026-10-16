@@ -239,11 +239,11 @@ final class Backend: ObservableObject {
 
     /// Saves the project URL and publishable key the player pasted in. Returns false if they don't look right.
     func connect(url: String, key: String) -> Bool {
-        let cleanURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let parsed = URL(string: cleanURL), parsed.scheme == "https", parsed.host != nil, cleanKey.count > 20 else {
+        guard let parsed = ServerURL.normalize(url), cleanKey.count > 20, !cleanKey.hasPrefix("sb_secret_") else {
             return false
         }
+        let cleanURL = parsed.absoluteString
         UserDefaults.standard.set(cleanURL, forKey: Self.urlKey)
         UserDefaults.standard.set(cleanKey, forKey: Self.keyKey)
         connectFromSavedSettings()
@@ -448,7 +448,16 @@ final class Backend: ObservableObject {
     }
 
     private func friendly(_ error: Error) -> String {
+        if error is DecodingError {
+            return "The server sent back something unexpected. Check the Project URL looks like https://xxxx.supabase.co (Supabase → Project Settings → Data API), and that the SQL setup ran. Then tap Disconnect and connect again."
+        }
         let text = error.localizedDescription
+        if text.contains("relation") && text.contains("does not exist") {
+            return "The server tables are missing. Run the SQL setup file in Supabase's SQL Editor."
+        }
+        if text.lowercased().contains("invalid api key") || text.contains("No API key") {
+            return "The key isn't right. Copy the publishable key again (Project Settings → API Keys)."
+        }
         if text.contains("duplicate key") && text.contains("username") { return "That username is taken." }
         if text.contains("duplicate key") { return "Already done." }
         if text.contains("Invalid login credentials") { return "Wrong email or password." }
