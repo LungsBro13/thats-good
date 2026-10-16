@@ -266,7 +266,10 @@ final class Backend: ObservableObject {
             status = .notConfigured
             return
         }
-        api = SupabaseAPI(client: SupabaseClient(supabaseURL: url, supabaseKey: key))
+        // Opt in to the library's newer session behaviour (silences its warning). `currentUserID` reads
+        // `auth.session`, which refreshes an expired session, so nothing else changes.
+        let options = SupabaseClientOptions(auth: .init(emitLocalSessionAsInitialSession: true))
+        api = SupabaseAPI(client: SupabaseClient(supabaseURL: url, supabaseKey: key, options: options))
         status = .signedOut
         Task { await restoreSession() }
     }
