@@ -298,5 +298,101 @@ check(record.wins == 2 && record.losses == 1 && record.halves == 1 && record.pla
 check(record.byFormat[.matchplay]?.wins == 1 && record.byFormat[.matchplay]?.losses == 1, "rivalry by format")
 check(record.form.first == .win, "form is most recent first")
 
+
+// MARK: Tournaments
+
+func tp(_ key: String, _ index: Double? = nil, team: Int? = nil) -> TourPlayer {
+    TourPlayer(key: key, name: key.capitalized, handicapIndex: index, team: team)
+}
+func tour(_ scoring: TourScoring, _ mode: TourMode, basis: HandicapBasis = .gross, players: [TourPlayer]) -> TourSetup {
+    TourSetup(scoring: scoring, mode: mode, basis: basis, holes: matchHoles, courseRating: 72, slope: 113, players: players)
+}
+
+check(TournamentEngine.seedOrder(8) == [1, 8, 4, 5, 2, 7, 3, 6], "knockout seeding: 1 v 8, 4 v 5, 2 v 7, 3 v 6")
+check(TournamentEngine.formatPoints(7.5) == "7½" && TournamentEngine.formatPoints(0.5) == "½" && TournamentEngine.formatPoints(8) == "8", "half points")
+
+// WHS allowances (course handicap = index on this course)
+let netTour = tour(.stroke, .pairs, basis: .net, players: [tp("a", 10), tp("b", 20)])
+check(TournamentEngine.sharedHandicap(netTour, netTour.players, format: .foursomes) == 15, "foursomes: 50% of combined")
+check(TournamentEngine.sharedHandicap(netTour, netTour.players, format: .scramble) == 7, "scramble: 35% low + 15% high")
+check(TournamentEngine.playerUnit(netTour, tp("a", 10), allowance: 0.95).handicap == 10, "individual stroke 95% of 10 rounds to 10")
+check(TournamentEngine.playerUnit(netTour, tp("b", 20), allowance: 0.85).handicap == 17, "fourball stroke 85%")
+let singlesGame = TournamentEngine.makeGame("s1", title: "", TournamentEngine.singleSide(netTour, tp("x", 5), matchPlay: true),
+                                            TournamentEngine.singleSide(netTour, tp("y", 9), matchPlay: true))
+check(singlesGame.a?.units.first?.handicap == 0 && singlesGame.b?.units.first?.handicap == 4, "singles: lower plays off zero")
+
+// Match play game state
+let ko = tour(.match, .individual, players: [tp("p1"), tp("p2"), tp("p3")])
+let duel = TournamentEngine.makeGame("k1-2", title: "", TournamentEngine.singleSide(ko, tp("p2"), matchPlay: true),
+                                     TournamentEngine.singleSide(ko, tp("p3"), matchPlay: true))
+var tourScores: TourScores = ["k1-2": ["p2": card([-1, -1, -1]), "p3": card([0, 0, 0])]]
+var gs = TournamentEngine.gameState(ko, tourScores, duel, suddenDeath: true)
+check(gs.status == "3 UP" && gs.leader == 0 && !gs.finished, "3 up after 3")
+tourScores["k1-2"] = ["p2": card([-1, -1, -1, -1, -1] + Array(repeating: 0, count: 13)), "p3": card(Array(repeating: 0, count: 18))]
+gs = TournamentEngine.gameState(ko, tourScores, duel, suddenDeath: true)
+check(gs.status == "5&4" && gs.winner == 0 && gs.finished, "five up with four to play is 5&4")
+
+// Halved after 18: sudden death
+var level = ["p2": card(Array(repeating: 0, count: 18)), "p3": card(Array(repeating: 0, count: 18))]
+tourScores["k1-2"] = level
+check(TournamentEngine.group(ko, tourScores, duel, suddenDeath: true).holes.last?.number == 19, "halved knockout adds the 19th")
+check(TournamentEngine.extraHole(ko, 1).par == pars[0], "19th plays as the 1st")
+level["p2"]?[19] = pars[0] - 1
+level["p3"]?[19] = pars[0]
+tourScores["k1-2"] = level
+gs = TournamentEngine.gameState(ko, tourScores, duel, suddenDeath: true)
+check(gs.winner == 0 && gs.status == "Won at the 19th", "won at the 19th")
+
+// Bracket with a bye
+var bracket = TournamentEngine.bracket(ko, [:])
+check(bracket.rounds.count == 2 && bracket.rounds[0][0].isBye && bracket.rounds[0][0].winner?.key == "p1", "top seed gets the bye")
+check(bracket.rounds[1][0].game.a?.key == "p1" && bracket.rounds[1][0].game.b == nil, "final waits for the semi")
+bracket = TournamentEngine.bracket(ko, tourScores)
+check(bracket.rounds[1][0].game.b?.key == "p2" && bracket.champion == nil, "semi winner goes through to the final")
+check(TournamentEngine.scoringGroups(ko, tourScores).map(\.game) == ["k1-2", "k2-1"], "scorers see ready matches")
+
+// Ryder Cup style
+let cupPlayers = ["a1", "a2", "a3", "a4"].map { tp($0, team: 0) } + ["b1", "b2", "b3", "b4"].map { tp($0, team: 1) }
+let cupTour = tour(.match, .teams, players: cupPlayers)
+let games = TournamentEngine.cupGames(cupTour)
+check(games.count == 8, "2 fourballs, 2 foursomes, 4 singles")
+check(games.first { $0.key == "fs1" }.map { [$0.a?.key, $0.b?.key] } == ["a1+a3", "b2+b4"], "foursomes mix pairs and opponents")
+let halved = card(Array(repeating: 0, count: 18))
+let cupScores: TourScores = ["s1": ["a1": card(Array(repeating: -1, count: 10)), "b1": card(Array(repeating: 0, count: 10))],
+                             "s2": ["a2": halved, "b2": halved]]
+let cupResult = TournamentEngine.cup(cupTour, cupScores)
+check(cupResult.points == [1.5, 0.5] && cupResult.total == 8 && cupResult.toWin == 4.5, "cup points and points to win")
+check(cupResult.projected == [4.5, 3.5], "projected: unplayed matches count as halves")
+check(cupResult.sessionPoints(.singles) == [1.5, 0.5] && cupResult.winner == nil, "session points")
+check(TournamentEngine.problem(tour(.match, .teams, players: cupPlayers.dropLast())) != nil, "uneven teams are flagged")
+
+// Stroke play leaderboard over two rounds, with movement
+var two = tour(.stroke, .individual, players: [tp("p1"), tp("p2")])
+two.rounds = 2
+let strokeScores: TourScores = [
+    "r1": ["p1": card([1, 1] + Array(repeating: 0, count: 16)), "p2": card(Array(repeating: 0, count: 18))],
+    "r2": ["p1": card([-1, 0, 0]), "p2": card([1, 1])],
+]
+let board = TournamentEngine.leaderboard(two, strokeScores)
+check(board.currentRound == 2 && board.rows.map(\.key) == ["p1", "p2"], "leader after two rounds")
+check(board.rows[0].today == -1 && board.rows[0].thru == 3 && board.rows[0].total == 1, "today, thru and total")
+check(board.rows[0].movement == 1 && board.rows[1].movement == -1, "movement since last round")
+
+// Team stroke play, best 2 per hole
+let teamTour = tour(.stroke, .teams, players: [tp("a1", team: 0), tp("a2", team: 0), tp("a3", team: 0), tp("b1", team: 1), tp("b2", team: 1)])
+let teamBoard = TournamentEngine.leaderboard(teamTour, ["r1": ["a1": card([-1]), "a2": card([0]), "a3": card([2]), "b1": card([0]), "b2": card([0])]])
+check(teamBoard.rows.map(\.total) == [-1, 0], "best 2 scores count for each team")
+
+// Fourball pairs: best ball
+let fbTour = tour(.stroke, .pairs, players: [tp("a"), tp("b"), tp("c"), tp("d")])
+let fbBoard = TournamentEngine.leaderboard(fbTour, ["r1": ["a": card([1, 0]), "b": card([0, 2]), "c": card([1, 1]), "d": card([1, 1])]])
+check(fbBoard.rows.first?.key == "a+b" && fbBoard.rows.first?.total == 0, "fourball takes the better ball")
+
+// Feed
+let feedItems = TournamentEngine.feed(two, strokeScores, events: [
+    TourScoreEvent(game: "r2", unit: "p1", hole: 1, strokes: pars[0] - 1, time: Date(timeIntervalSince1970: 10)),
+])
+check(feedItems.first?.text == "birdie on 1" && feedItems.first?.name == "P1", "feed shows birdies")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)
