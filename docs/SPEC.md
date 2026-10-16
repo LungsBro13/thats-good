@@ -42,6 +42,9 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
 - Live scoring: one person per group enters scores and everyone's leaderboard updates live
 - Live stroke leaderboard (position, today, holes played, total, movement since last round, gross or net)
 - Live team scoreboard (points, points needed to win, projected final score, session tabs, live match status)
+- Individual or pairs match play is a knockout. The draw order is the seeding; byes go to the top seeds. A halved match goes to sudden death (the 19th plays as the 1st).
+- Players join with a 6 character code. The organiser sets the draw and teams, then starts it. The draw is locked after that.
+- Later: a share link that opens the app, push alerts for big moments, linking a tournament round to the player's own round
 
 ## Smart features
 
@@ -64,7 +67,7 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
    - 3a done: accounts, friends, shared rounds, progress, leaderboards
    - 3b done: side matches scored live and all-time rivalry records
    - Later: link a match to the scorer's own Play round, so one round counts for both
-   - 3c next: tournaments
+   - 3c done: tournaments (stroke or match; individual, pairs or two teams; live boards; join code)
 4. Smart caddie and practice plan
 5. AI swing analyser (see below)
 

@@ -221,6 +221,7 @@ final class Backend: ObservableObject {
     @Published private(set) var outgoing: [ProfileDTO] = []
     @Published private(set) var rounds: [UUID: [SharedRoundDTO]] = [:]
     @Published var matches: [LiveMatch] = []
+    @Published var tournaments: [LiveTournament] = []
     @Published private(set) var isBusy = false
     @Published var message: String?
 
@@ -278,6 +279,7 @@ final class Backend: ObservableObject {
         outgoing = []
         rounds = [:]
         matches = []
+        tournaments = []
     }
 
     // MARK: Account
@@ -370,6 +372,7 @@ final class Backend: ObservableObject {
             let shared = try await api.rounds(for: accepted + [me])
             rounds = Dictionary(grouping: shared, by: \.userID)
             await refreshMatches()
+            await refreshTournaments()
         } catch {
             message = friendly(error)
         }
@@ -506,6 +509,7 @@ final class Backend: ObservableObject {
         ]
         status = .signedIn
         loadDemoMatches()
+        loadDemoTournaments()
     }
     #endif
 }
