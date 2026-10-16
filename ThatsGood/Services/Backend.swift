@@ -4,7 +4,7 @@ import SwiftData
 
 // MARK: - What's stored on the server
 
-struct ProfileDTO: Codable, Identifiable, Hashable {
+struct ProfileDTO: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     var username: String
     var displayName: String
@@ -23,13 +23,13 @@ struct ProfileDTO: Codable, Identifiable, Hashable {
     }
 }
 
-struct FriendshipDTO: Codable, Hashable {
+struct FriendshipDTO: Codable, Hashable, Sendable {
     let requester: UUID
     let addressee: UUID
     var status: String
 }
 
-struct SharedHole: Codable {
+struct SharedHole: Codable, Sendable {
     var number: Int
     var par: Int
     var strokeIndex: Int
@@ -42,7 +42,7 @@ struct SharedHole: Codable {
     var penalties: Int
 }
 
-struct SharedRoundDTO: Codable, Identifiable {
+struct SharedRoundDTO: Codable, Identifiable, Sendable {
     let id: UUID
     var userID: UUID
     var playedOn: String  // yyyy-MM-dd
@@ -118,6 +118,91 @@ struct SharedRoundDTO: Codable, Identifiable {
     }
 }
 
+// MARK: - Server calls
+
+/// Plain network calls. They run off the main thread and only hand back simple values.
+struct SupabaseAPI: Sendable {
+    let client: SupabaseClient
+
+    func currentUserID() async -> UUID? {
+        (try? await client.auth.session)?.user.id
+    }
+
+    func signUp(email: String, password: String) async throws -> UUID? {
+        try await client.auth.signUp(email: email, password: password).session?.user.id
+    }
+
+    func signIn(email: String, password: String) async throws -> UUID {
+        try await client.auth.signIn(email: email, password: password).user.id
+    }
+
+    func signOut() async {
+        try? await client.auth.signOut()
+    }
+
+    func profile(id: UUID) async throws -> ProfileDTO? {
+        let rows: [ProfileDTO] = try await client.from("profiles").select()
+            .eq("id", value: id.uuidString).execute().value
+        return rows.first
+    }
+
+    func profile(username: String) async throws -> ProfileDTO? {
+        let rows: [ProfileDTO] = try await client.from("profiles").select()
+            .eq("username", value: username).execute().value
+        return rows.first
+    }
+
+    func profiles(ids: [UUID]) async throws -> [ProfileDTO] {
+        guard !ids.isEmpty else { return [] }
+        return try await client.from("profiles").select()
+            .in("id", values: ids.map(\.uuidString)).execute().value
+    }
+
+    func insertProfile(_ profile: ProfileDTO) async throws {
+        try await client.from("profiles").insert(profile).execute()
+    }
+
+    func setVisibility(_ visibility: String, for id: UUID) async throws {
+        try await client.from("profiles").update(["stats_visibility": visibility])
+            .eq("id", value: id.uuidString).execute()
+    }
+
+    func friendships() async throws -> [FriendshipDTO] {
+        try await client.from("friendships").select().execute().value
+    }
+
+    func requestFriend(from me: UUID, to other: UUID) async throws {
+        try await client.from("friendships")
+            .insert(FriendshipDTO(requester: me, addressee: other, status: "pending")).execute()
+    }
+
+    func acceptFriend(requester: UUID, addressee: UUID) async throws {
+        try await client.from("friendships").update(["status": "accepted"])
+            .eq("requester", value: requester.uuidString)
+            .eq("addressee", value: addressee.uuidString)
+            .execute()
+    }
+
+    func removeFriendship(_ a: UUID, _ b: UUID) async throws {
+        let x = a.uuidString, y = b.uuidString
+        try await client.from("friendships").delete()
+            .or("and(requester.eq.\(x),addressee.eq.\(y)),and(requester.eq.\(y),addressee.eq.\(x))")
+            .execute()
+    }
+
+    func rounds(for userIDs: [UUID]) async throws -> [SharedRoundDTO] {
+        try await client.from("shared_rounds").select()
+            .in("user_id", values: userIDs.map(\.uuidString))
+            .order("played_on", ascending: false)
+            .limit(2000)
+            .execute().value
+    }
+
+    func upsertRounds(_ rounds: [SharedRoundDTO]) async throws {
+        try await client.from("shared_rounds").upsert(rounds).execute()
+    }
+}
+
 // MARK: - Connection to Supabase
 
 /// Accounts, friends and shared rounds. Everything else in the app works without it.
@@ -138,7 +223,7 @@ final class Backend: ObservableObject {
     @Published private(set) var isBusy = false
     @Published var message: String?
 
-    private var client: SupabaseClient?
+    private var api: SupabaseAPI?
     private var userID: UUID?
 
     private static let urlKey = "supabaseURL"
@@ -147,6 +232,8 @@ final class Backend: ObservableObject {
     init() {
         connectFromSavedSettings()
     }
+
+    var myID: UUID? { userID }
 
     // MARK: Setup
 
@@ -166,7 +253,7 @@ final class Backend: ObservableObject {
     func disconnect() {
         UserDefaults.standard.removeObject(forKey: Self.urlKey)
         UserDefaults.standard.removeObject(forKey: Self.keyKey)
-        client = nil
+        api = nil
         clearAccount()
         status = .notConfigured
     }
@@ -177,7 +264,7 @@ final class Backend: ObservableObject {
             status = .notConfigured
             return
         }
-        client = SupabaseClient(supabaseURL: url, supabaseKey: key)
+        api = SupabaseAPI(client: SupabaseClient(supabaseURL: url, supabaseKey: key))
         status = .signedOut
         Task { await restoreSession() }
     }
@@ -194,21 +281,19 @@ final class Backend: ObservableObject {
     // MARK: Account
 
     func restoreSession() async {
-        guard let client else { return }
-        guard let session = try? await client.auth.session else {
+        guard let api else { return }
+        guard let id = await api.currentUserID() else {
             status = .signedOut
             return
         }
-        userID = session.user.id
+        userID = id
         await loadProfile()
     }
 
     func signUp(email: String, password: String) async {
-        await run {
-            guard let client = self.client else { return }
-            let response = try await client.auth.signUp(email: email, password: password)
-            if let session = response.session {
-                self.userID = session.user.id
+        await run { api in
+            if let id = try await api.signUp(email: email, password: password) {
+                self.userID = id
                 await self.loadProfile()
             } else {
                 self.message = "Check your email and tap the confirm link, then sign in."
@@ -217,26 +302,22 @@ final class Backend: ObservableObject {
     }
 
     func signIn(email: String, password: String) async {
-        await run {
-            guard let client = self.client else { return }
-            let session = try await client.auth.signIn(email: email, password: password)
-            self.userID = session.user.id
+        await run { api in
+            self.userID = try await api.signIn(email: email, password: password)
             await self.loadProfile()
         }
     }
 
     func signOut() async {
-        try? await client?.auth.signOut()
+        await api?.signOut()
         clearAccount()
-        status = client == nil ? .notConfigured : .signedOut
+        status = api == nil ? .notConfigured : .signedOut
     }
 
     private func loadProfile() async {
-        guard let client, let userID else { return }
+        guard let api, let userID else { return }
         do {
-            let rows: [ProfileDTO] = try await client.from("profiles").select()
-                .eq("id", value: userID.uuidString).execute().value
-            if let mine = rows.first {
+            if let mine = try await api.profile(id: userID) {
                 profile = mine
                 status = .signedIn
                 await refresh()
@@ -249,11 +330,11 @@ final class Backend: ObservableObject {
     }
 
     func createProfile(username: String, displayName: String) async {
-        await run {
-            guard let client = self.client, let userID = self.userID else { return }
+        await run { api in
+            guard let userID = self.userID else { return }
             let mine = ProfileDTO(id: userID, username: username.lowercased(),
                                   displayName: displayName, statsVisibility: "friends")
-            try await client.from("profiles").insert(mine).execute()
+            try await api.insertProfile(mine)
             self.profile = mine
             self.status = .signedIn
             await self.refresh()
@@ -261,42 +342,30 @@ final class Backend: ObservableObject {
     }
 
     func setVisibility(_ visibility: String) async {
-        await run {
-            guard let client = self.client, let userID = self.userID else { return }
-            try await client.from("profiles").update(["stats_visibility": visibility])
-                .eq("id", value: userID.uuidString).execute()
+        await run { api in
+            guard let userID = self.userID else { return }
+            try await api.setVisibility(visibility, for: userID)
             self.profile?.statsVisibility = visibility
         }
     }
 
     // MARK: Friends
 
-    var myID: UUID? { userID }
-
     func refresh() async {
-        guard status == .signedIn, let client, let me = userID else { return }
+        guard status == .signedIn, let api, let me = userID else { return }
         do {
-            let links: [FriendshipDTO] = try await client.from("friendships").select().execute().value
+            let links = try await api.friendships()
             let accepted = links.filter { $0.status == "accepted" }.map { $0.requester == me ? $0.addressee : $0.requester }
             let incomingIDs = links.filter { $0.status == "pending" && $0.addressee == me }.map(\.requester)
             let outgoingIDs = links.filter { $0.status == "pending" && $0.requester == me }.map(\.addressee)
 
-            let everyone = Set(accepted + incomingIDs + outgoingIDs)
-            var people: [UUID: ProfileDTO] = [:]
-            if !everyone.isEmpty {
-                let found: [ProfileDTO] = try await client.from("profiles").select()
-                    .in("id", values: everyone.map(\.uuidString)).execute().value
-                people = Dictionary(uniqueKeysWithValues: found.map { ($0.id, $0) })
-            }
+            let found = try await api.profiles(ids: Array(Set(accepted + incomingIDs + outgoingIDs)))
+            let people = Dictionary(uniqueKeysWithValues: found.map { ($0.id, $0) })
             friends = accepted.compactMap { people[$0] }.sorted { $0.displayName < $1.displayName }
             incoming = incomingIDs.compactMap { people[$0] }
             outgoing = outgoingIDs.compactMap { people[$0] }
 
-            let shared: [SharedRoundDTO] = try await client.from("shared_rounds").select()
-                .in("user_id", values: (accepted + [me]).map(\.uuidString))
-                .order("played_on", ascending: false)
-                .limit(2000)
-                .execute().value
+            let shared = try await api.rounds(for: accepted + [me])
             rounds = Dictionary(grouping: shared, by: \.userID)
         } catch {
             message = friendly(error)
@@ -306,19 +375,17 @@ final class Backend: ObservableObject {
     /// Sends a request, or accepts theirs if they already asked you.
     func addFriend(username: String) async -> Bool {
         var ok = false
-        await run {
-            guard let client = self.client, let me = self.userID else { return }
+        await run { api in
+            guard let me = self.userID else { return }
             let name = username.trimmingCharacters(in: .whitespaces).lowercased().replacingOccurrences(of: "@", with: "")
-            let found: [ProfileDTO] = try await client.from("profiles").select().eq("username", value: name).execute().value
-            guard let other = found.first, other.id != me else {
+            guard let other = try await api.profile(username: name), other.id != me else {
                 self.message = "No player called @\(name)."
                 return
             }
             if self.incoming.contains(where: { $0.id == other.id }) {
-                try await self.acceptRequest(from: other, client: client, me: me)
+                try await api.acceptFriend(requester: other.id, addressee: me)
             } else {
-                try await client.from("friendships")
-                    .insert(FriendshipDTO(requester: me, addressee: other.id, status: "pending")).execute()
+                try await api.requestFriend(from: me, to: other.id)
                 self.message = "Request sent to @\(other.username)."
             }
             ok = true
@@ -328,28 +395,18 @@ final class Backend: ObservableObject {
     }
 
     func accept(_ other: ProfileDTO) async {
-        await run {
-            guard let client = self.client, let me = self.userID else { return }
-            try await self.acceptRequest(from: other, client: client, me: me)
+        await run { api in
+            guard let me = self.userID else { return }
+            try await api.acceptFriend(requester: other.id, addressee: me)
             await self.refresh()
         }
     }
 
-    private func acceptRequest(from other: ProfileDTO, client: SupabaseClient, me: UUID) async throws {
-        try await client.from("friendships").update(["status": "accepted"])
-            .eq("requester", value: other.id.uuidString)
-            .eq("addressee", value: me.uuidString)
-            .execute()
-    }
-
     /// Declines a request, cancels one you sent, or removes a friend.
     func remove(_ other: ProfileDTO) async {
-        await run {
-            guard let client = self.client, let me = self.userID else { return }
-            let a = me.uuidString, b = other.id.uuidString
-            try await client.from("friendships").delete()
-                .or("and(requester.eq.\(a),addressee.eq.\(b)),and(requester.eq.\(b),addressee.eq.\(a))")
-                .execute()
+        await run { api in
+            guard let me = self.userID else { return }
+            try await api.removeFriendship(me, other.id)
             await self.refresh()
         }
     }
@@ -358,7 +415,7 @@ final class Backend: ObservableObject {
 
     /// Shares finished rounds that haven't been shared yet. Demo rounds are never shared.
     func sync(context: ModelContext) async {
-        guard status == .signedIn, let client, let me = userID else { return }
+        guard status == .signedIn, let api, let me = userID else { return }
         let descriptor = FetchDescriptor<Round>(predicate: #Predicate { $0.isComplete && $0.uploadedAt == nil })
         let pending = ((try? context.fetch(descriptor)) ?? []).filter { $0.courseName != SampleData.courseName }
         guard !pending.isEmpty else { return }
@@ -368,7 +425,7 @@ final class Backend: ObservableObject {
             return SharedRoundDTO(round: round, id: id, userID: me)
         }
         do {
-            try await client.from("shared_rounds").upsert(payload).execute()
+            try await api.upsertRounds(payload)
             for round in pending { round.uploadedAt = .now }
             await refresh()
         } catch {
@@ -378,12 +435,13 @@ final class Backend: ObservableObject {
 
     // MARK: Helpers
 
-    private func run(_ work: @escaping @MainActor () async throws -> Void) async {
+    private func run(_ work: @escaping @MainActor (SupabaseAPI) async throws -> Void) async {
+        guard let api else { return }
         isBusy = true
         message = nil
         defer { isBusy = false }
         do {
-            try await work()
+            try await work(api)
         } catch {
             message = friendly(error)
         }
@@ -407,7 +465,7 @@ final class Backend: ObservableObject {
             ProfileDTO(id: UUID(), username: "jack", displayName: "Jack", statsVisibility: "friends"),
         ]
         var rng = SeededGenerator(seed: 11)
-        func rounds(for person: ProfileDTO, start: Double, end: Double) -> [SharedRoundDTO] {
+        func makeRounds(for person: ProfileDTO, start: Double, end: Double) -> [SharedRoundDTO] {
             let pars = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5]
             return (0..<14).map { i in
                 let skill = start + (end - start) * Double(i) / 13  // average strokes over par per hole
@@ -429,10 +487,10 @@ final class Backend: ObservableObject {
         friends = people
         incoming = [ProfileDTO(id: UUID(), username: "ollie", displayName: "Ollie", statsVisibility: "friends")]
         rounds = [
-            me.id: rounds(for: me, start: 0.55, end: 0.4),
-            people[0].id: rounds(for: people[0], start: 0.3, end: 0.32),
-            people[1].id: rounds(for: people[1], start: 0.6, end: 0.52),
-            people[2].id: rounds(for: people[2], start: 0.85, end: 0.6),
+            me.id: makeRounds(for: me, start: 0.55, end: 0.4),
+            people[0].id: makeRounds(for: people[0], start: 0.3, end: 0.32),
+            people[1].id: makeRounds(for: people[1], start: 0.6, end: 0.52),
+            people[2].id: makeRounds(for: people[2], start: 0.85, end: 0.6),
         ]
         status = .signedIn
     }
