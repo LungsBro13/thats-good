@@ -19,6 +19,10 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
 | Money | Points only. No stakes or payments in the app. |
 | Look | Sleek and dark: near-black background, thin dividers, Archivo font, soft green accent (#9BDA6E), orange for losses (#F0915A). The real app follows the phone's light or dark setting. |
 | Handicap | Calculated with the World Handicap System formula. It's labelled as an estimate, not an official handicap. |
+| Group scoring | One person can enter scores for the whole group. Players don't need to confirm their cards. |
+| Stats privacy | Friends can see your stats by default. Each user can change this to everyone or only me. |
+| Guest players | Allowed in tournaments and matches, with no app needed |
+| Importing rounds | Import old rounds from other golf apps (CSV) in a later phase |
 
 ## Screens (bottom tabs: Home, Friends, Play, Stats, Bag)
 
@@ -61,11 +65,7 @@ Clickable mockup: https://claude.ai/artifact/5JLKD41GTA4TmeaH6WGLZU (screen file
 
 ## Still to decide
 
-1. Group scorer: should each player confirm their card at the end, or no confirmation?
-2. Default stats visibility: friends, everyone, or only me?
-3. Guest players without the app in tournaments: allowed or not?
-4. Import old rounds from other apps: yes later, or not needed?
-5. Does the developer have a Mac with Xcode? This is needed to build and run the app.
+1. Does the developer have a Mac with Xcode? This is needed to build and run the app.
 
 ## Secrets (never commit these)
 
