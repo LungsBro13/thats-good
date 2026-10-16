@@ -134,9 +134,9 @@ async function byId(id: number, key: string): Promise<CatalogCourse[]> {
 async function search(query: string, key: string): Promise<CatalogCourse[]> {
   const q = query.trim().toLowerCase();
   const hit = await db(`course_search_cache?query=eq.${encodeURIComponent(q)}&select=ids,fetched_at`);
-  if (Array.isArray(hit) && hit[0] && fresh(hit[0].fetched_at)) {
-    const ids: number[] = hit[0].ids ?? [];
-    if (ids.length === 0) return [];
+  // Only searches that found something are cached; empty ones are asked again next time.
+  if (Array.isArray(hit) && hit[0] && fresh(hit[0].fetched_at) && (hit[0].ids ?? []).length > 0) {
+    const ids: number[] = hit[0].ids;
     const rows = await db(`course_catalog?id=in.(${ids.join(",")})&select=data`);
     if (Array.isArray(rows) && rows.length === ids.length) {
       const byKey = new Map(rows.map((r: any) => [r.data.id, r.data]));
@@ -144,10 +144,21 @@ async function search(query: string, key: string): Promise<CatalogCourse[]> {
     }
   }
   const body = await golfApi(`/search?search_query=${encodeURIComponent(q)}`, key);
-  const courses = (Array.isArray(body?.courses) ? body.courses : [])
+  const raw = Array.isArray(body?.courses) ? body.courses : (Array.isArray(body) ? body : []);
+  const courses = raw
     .map(normalizeCourse)
     .filter((c: CatalogCourse | null): c is CatalogCourse => c !== null)
     .slice(0, 25);
+  if (raw.length > 0 && courses.length === 0) {
+    // The API answered with courses we couldn't read: say what it sent so the format can be fixed.
+    throw new Error(`Course data came back in an unexpected format (fields: ${Object.keys(raw[0] ?? {}).slice(0, 8).join(", ")}).`);
+  }
+  if (courses.length === 0) {
+    if (!Array.isArray(body?.courses) && !Array.isArray(body)) {
+      throw new Error(`Course search got an unexpected answer (fields: ${Object.keys(body ?? {}).slice(0, 8).join(", ")}).`);
+    }
+    return [];
+  }
   await remember(courses);
   await db("course_search_cache", {
     method: "POST",
