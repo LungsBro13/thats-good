@@ -82,6 +82,21 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
   towards the handicap estimate; an optional hole-by-hole card is kept too. Nothing personal is stored in the repo.
 - Stats → **Practice plan**: your 3 biggest leaks against a scratch golfer, where exactly you lose shots, and a drill for each
 
+## Course data
+
+- Add a course → **Find your course**: search the course database, pick your tees, and course rating, slope, par,
+  stroke index and yards fill in. The map loads by itself.
+- Lookups go through the `course-search` edge function (`supabase/functions/course-search/index.ts`), which holds the
+  GolfCourseAPI key. Results are cached in `course_catalog`, so each course is only fetched once.
+- Course maps are shared in `course_maps`: the first player to load a course (or set a missing green) saves it for everyone.
+
+### One-time setup
+
+1. SQL Editor → run `supabase/migrations/004_course_data.sql`.
+2. **Edge Functions → Secrets** → add `GOLFCOURSEAPI_KEY` with your key from golfcourseapi.com.
+3. **Edge Functions → Deploy a new function → Via editor** → name it `course-search` → paste
+   `supabase/functions/course-search/index.ts` → **Deploy**.
+
 ## Checks
 
-Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), an Xcode build, and, on `phase-*` branches, a simulator launch (including Detailed mode on the Old Course from OpenStreetMap) that saves screenshots to the `ci-screens` branch.
+Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), edge function tests (`Tests/EdgeFunctions`), an Xcode build, and, on `phase-*` branches, a simulator launch (including Detailed mode on the Old Course from OpenStreetMap) that saves screenshots to the `ci-screens` branch.
