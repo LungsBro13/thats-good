@@ -78,6 +78,8 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
   a club has 3 measured shots, typical yardages until then), and when to lay up
 - Lay-up advice compares what you average going for it with laying up to each distance, using your own scoring by
   distance from Detailed rounds (`ThatsGood/Logic/Caddie.swift`, tested)
+- Bag → **Import scores**: bring in past scores (CSV file or pasted text, e.g. from a national handicap app). They count
+  towards the handicap estimate; an optional hole-by-hole card is kept too. Nothing personal is stored in the repo.
 - Stats → **Practice plan**: your 3 biggest leaks against a scratch golfer, where exactly you lose shots, and a drill for each
 
 ## Checks
