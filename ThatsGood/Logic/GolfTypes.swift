@@ -39,6 +39,7 @@ struct HoleData {
     var upAndDown: Bool?         // nil when the green was hit
     var penalties: Int
     var shots: [ShotData] = []   // Detailed mode only; empty in Quick mode
+    var number: Int = 0          // hole number; 0 when not known
 }
 
 /// One played round, ready for calculations.

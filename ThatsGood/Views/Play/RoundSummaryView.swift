@@ -4,6 +4,13 @@ import SwiftData
 struct RoundSummaryView: View {
     let round: Round
     var onDone: (() -> Void)? = nil
+    /// Plays Round Wrapped as soon as the summary opens (straight after finishing a round).
+    var playWrapped = false
+
+    @Query(filter: #Predicate<Round> { $0.isComplete }) private var allRounds: [Round]
+    @Query private var imported: [ImportedScore]
+    @State private var showWrapped = false
+    @State private var played = false
 
     var body: some View {
         let data = round.data
@@ -25,7 +32,14 @@ struct RoundSummaryView: View {
                     }
                 }
 
+                Button { showWrapped = true } label: {
+                    Label("Play Round Wrapped", systemImage: "sparkles")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+
                 ScorecardGrid(round: round)
+
+                RoundReportSection(report: RoundWrapped.report(WrappedContext.make(round, allRounds: allRounds, imported: imported)))
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 0) {
                     StatTile(title: "Fairways", value: "\(stats.fairwayHits)/\(stats.fairwayAttempts)")
@@ -74,6 +88,52 @@ struct RoundSummaryView: View {
         .background(Color.tgBackground)
         .navigationTitle("Round summary")
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showWrapped) {
+            RoundWrappedView(round: round) { showWrapped = false }
+        }
+        .onAppear {
+            if playWrapped && !played {
+                played = true
+                showWrapped = true
+            }
+        }
+    }
+}
+
+/// The written report: what went well, what cost shots, and one thing to work on.
+struct RoundReportSection: View {
+    let report: RoundReport
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionLabel("Round report")
+            if !report.good.isEmpty {
+                group("What went well", report.good, icon: "checkmark.circle.fill", color: .tgAccent)
+            }
+            if !report.costly.isEmpty {
+                group("What cost you shots", report.costly, icon: "minus.circle.fill", color: .tgLoss)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Work on next").font(.subheadline.weight(.semibold))
+                Text(report.focus).font(.subheadline)
+                if let drill = report.drill {
+                    (Text("Drill: ").fontWeight(.semibold) + Text(drill)).font(.footnote).foregroundStyle(Color.tgMuted)
+                }
+            }
+        }
+    }
+
+    private func group(_ title: String, _ lines: [String], icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.subheadline.weight(.semibold))
+            ForEach(lines, id: \.self) { line in
+                Label {
+                    Text(line).font(.subheadline)
+                } icon: {
+                    Image(systemName: icon).foregroundStyle(color)
+                }
+            }
+        }
     }
 }
 

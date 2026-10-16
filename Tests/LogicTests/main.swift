@@ -487,5 +487,32 @@ let club = CatalogCourse(id: 1, club: "Royal Auckland and Grange", course: "Gran
 check(club.displayName == "Royal Auckland and Grange – Grange/Middlemore", "catalog: club and course name")
 check(CatalogCourse(id: 2, club: "Chisholm Links", course: "Chisholm Links", tees: []).displayName == "Chisholm Links", "catalog: same club and course name once")
 
+
+// MARK: Round Wrapped
+
+let wrappedOver = [1, 1, -2, 1, 1, 0, -1, 0, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1]
+let wrappedRound = makeRound(strokes: (0..<18).map { pars[$0] + wrappedOver[$0] })
+let earlier = [80, 84, 90].map { total -> RoundData in
+    var s = pars
+    s[17] += total - 72
+    return makeRound(strokes: s)
+}
+let wrappedContext = WrappedContext(round: wrappedRound, courseName: "Test Links", previous: earlier)
+let wrapped = RoundWrapped.slides(wrappedContext)
+check(wrapped.map(\.kind) == [.headline, .streak, .shotOfTheDay, .birdies, .putting, .damage, .nines, .outro],
+      "wrapped: the right slides, in order")
+check(wrapped[0].big == "85" && wrapped[0].detail == "Your 3rd best round.", "wrapped: headline ranks the round")
+check(wrapped[1].big == "6–8" && wrapped[1].detail == "Par, birdie, par", "wrapped: hot streak on 6, 7, 8")
+check(wrapped[2].big == "Hole 3" && wrapped[2].caption == "HOLE IN ONE!", "wrapped: hole in one is the shot of the day")
+check(wrapped[5].big == "2" && wrapped[5].detail?.hasPrefix("Holes 10 and 11") == true, "wrapped: shots lost to doubles")
+check(wrapped[6].big == "38" && wrapped[6].caption == "on the front nine", "wrapped: much better front nine")
+check(RoundWrapped.bestRun(makeRound(strokes: pars).holes)?.length == 18, "wrapped: all pars is an 18-hole streak")
+
+let report = RoundWrapped.report(wrappedContext)
+check(report.costly.first?.contains("double") == true && report.focus.hasPrefix("Course management"), "report: doubles are the focus")
+check(report.good.contains("2 birdies or better."), "report: birdies are a positive")
+check(RoundWrapped.report(WrappedContext(round: makeRound(strokes: pars), courseName: "x", previous: earlier)).focus == "Keep doing what you did today.",
+      "report: a clean round has nothing to fix")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)

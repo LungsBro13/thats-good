@@ -114,6 +114,14 @@ jobs:
           sleep 6
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/import.png"
           xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          for slide in 0 2 99; do
+            xcrun simctl terminate "$udid" com.lungsbro13.thatsgood 2>/dev/null || true
+            xcrun simctl launch "$udid" com.lungsbro13.thatsgood -demoData -tab play -wrapped -wrappedSlide "$slide"
+            sleep 5
+            xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running on Round Wrapped"; exit 1; }
+            xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/wrapped-$slide.png"
+          done
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag -catalogDemo
           sleep 6
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/course-search.png"
