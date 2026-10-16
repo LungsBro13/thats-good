@@ -12,6 +12,8 @@ struct PlayView: View {
     @State private var activeRound: Round?
     @State private var chosenCourse: Course?
     @State private var addingCourse = false
+    @State private var wrappedRound: Round?
+    @State private var wrappedStart = 0
 
     var body: some View {
         NavigationStack {
@@ -80,10 +82,20 @@ struct PlayView: View {
             .sheet(isPresented: $addingCourse) {
                 CourseEditorView()
             }
+            .fullScreenCover(item: $wrappedRound) { round in
+                RoundWrappedView(round: round, startAt: wrappedStart) { wrappedRound = nil }
+            }
             #if DEBUG
             .onAppear {
                 // Used by the CI screenshot step to open the scoring screen.
                 let args = ProcessInfo.processInfo.arguments
+                if args.contains("-wrapped") {
+                    // CI screenshot: Round Wrapped for the latest round. -wrappedSlide N opens slide N.
+                    let i = args.firstIndex(of: "-wrappedSlide").flatMap { $0 + 1 < args.count ? Int(args[$0 + 1]) : nil }
+                    wrappedStart = i ?? 0
+                    wrappedRound = completedRounds.max { $0.playedOn < $1.playedOn }
+                    return
+                }
                 if args.contains("-osmDemo") {
                     Task { await openOSMDemo() }
                     return

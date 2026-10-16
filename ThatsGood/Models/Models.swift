@@ -110,7 +110,8 @@ final class Round {
                 green: score.greenResult,
                 upAndDown: score.greenResult == .hit ? nil : score.upAndDown,
                 penalties: score.penalties,
-                shots: shotData(onHole: score.number)
+                shots: shotData(onHole: score.number),
+                number: score.number
             )
         }
         return RoundData(date: playedOn, courseRating: courseRating, slope: slope,

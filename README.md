@@ -82,6 +82,14 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
   towards the handicap estimate; an optional hole-by-hole card is kept too. Nothing personal is stored in the repo.
 - Stats → **Practice plan**: your 3 biggest leaks against a scratch golfer, where exactly you lose shots, and a drill for each
 
+## Round Wrapped
+
+- When you finish a round, a full-screen story plays: your score and how it ranks, hot streak, shot of the day,
+  birdies, greens, putts, shots lost to doubles, strongest area, front v back nine, handicap change
+- Tap to move on, hold to pause. The last slide has **Share to your story** (a 1080×1920 picture) and the full breakdown
+- The round summary now has a **Round report**: what went well, what cost you shots, and one thing to work on with a drill
+- Slides only show true, interesting facts (`ThatsGood/Logic/RoundWrapped.swift`, tested). Replay from any round summary.
+
 ## Course data
 
 - Add a course → **Find your course**: search the course database, pick your tees, and course rating, slope, par,

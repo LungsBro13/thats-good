@@ -51,7 +51,7 @@ struct ScoringView: View {
         }
         .fullScreenCover(isPresented: $showSummary, onDismiss: { dismiss() }) {
             NavigationStack {
-                RoundSummaryView(round: round, onDone: { showSummary = false })
+                RoundSummaryView(round: round, onDone: { showSummary = false }, playWrapped: true)
             }
         }
     }
