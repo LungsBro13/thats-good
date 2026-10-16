@@ -160,7 +160,8 @@ async function search(query: string, key: string): Promise<CatalogCourse[]> {
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
-  const key = env("GOLFCOURSEAPI_KEY");
+  // Tidy the secret: a pasted key often picks up spaces, a line break or a "Key " prefix.
+  const key = env("GOLFCOURSEAPI_KEY")?.replace(/^\s*Key\s+/i, "").replace(/\s+/g, "");
   if (!key) return json({ error: "Course search isn't set up: add the GOLFCOURSEAPI_KEY secret in Supabase." }, 500);
   try {
     const body = await req.json().catch(() => ({}));
