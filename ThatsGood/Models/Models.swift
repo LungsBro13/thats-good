@@ -9,6 +9,8 @@ final class Course {
     var slope: Int
     var holes: [CourseHole]
     var createdAt: Date
+    var geoData: Data? = nil  // CourseGeo as JSON (OpenStreetMap areas and greens the player marked)
+    @Relationship(deleteRule: .nullify, inverse: \Round.course) var rounds: [Round] = []
 
     init(name: String, teeName: String, courseRating: Double, slope: Int, holes: [CourseHole]) {
         self.name = name
@@ -20,6 +22,11 @@ final class Course {
     }
 
     var par: Int { holes.reduce(0) { $0 + $1.par } }
+
+    var geo: CourseGeo? {
+        get { CourseGeo.decode(geoData) }
+        set { geoData = newValue?.encoded() }
+    }
 }
 
 /// A round keeps its own copy of the course details, so editing a course never changes old rounds.
@@ -35,6 +42,8 @@ final class Round {
     var handicapIndexAtStart: Double?
     var isComplete: Bool
     @Relationship(deleteRule: .cascade, inverse: \HoleScore.round) var scores: [HoleScore] = []
+    @Relationship(deleteRule: .cascade, inverse: \Shot.round) var shots: [Shot] = []
+    var course: Course?
 
     init(course: Course, handicapIndex: Double?, playedOn: Date) {
         self.playedOn = playedOn
@@ -49,9 +58,12 @@ final class Round {
     }
 
     @discardableResult
-    static func start(course: Course, handicapIndex: Double?, in context: ModelContext, playedOn: Date = .now) -> Round {
+    static func start(course: Course, handicapIndex: Double?, in context: ModelContext,
+                      playedOn: Date = .now, mode: String = "quick") -> Round {
         let round = Round(course: course, handicapIndex: handicapIndex, playedOn: playedOn)
+        round.mode = mode
         context.insert(round)
+        round.course = course
         for hole in round.holes {
             round.scores.append(HoleScore(number: hole.number, par: hole.par))
         }
@@ -61,6 +73,12 @@ final class Round {
     var sortedScores: [HoleScore] { scores.sorted { $0.number < $1.number } }
     var enteredScores: [HoleScore] { sortedScores.filter(\.isEntered) }
     var lastHoleNumber: Int { holes.last?.number ?? 18 }
+    var isDetailed: Bool { mode == "detailed" }
+
+    /// Shots on one hole in the order they were marked, including the "on green" marker.
+    func shots(onHole number: Int) -> [Shot] {
+        shots.filter { $0.holeNumber == number }.sorted { $0.index < $1.index }
+    }
 
     func hole(_ number: Int) -> CourseHole? { holes.first { $0.number == number } }
     func score(for number: Int) -> HoleScore? { scores.first { $0.number == number } }
@@ -83,11 +101,81 @@ final class Round {
                 fairway: hole.par >= 4 ? score.fairwayResult : nil,
                 green: score.greenResult,
                 upAndDown: score.greenResult == .hit ? nil : score.upAndDown,
-                penalties: score.penalties
+                penalties: score.penalties,
+                shots: shotData(onHole: score.number)
             )
         }
         return RoundData(date: playedOn, courseRating: courseRating, slope: slope,
                          handicapIndex: handicapIndexAtStart, holes: holeData)
+    }
+
+    /// Strokes for strokes gained. Empty if any stroke has no distance to the green.
+    private func shotData(onHole number: Int) -> [ShotData] {
+        let strokes = shots(onHole: number).filter { $0.lieValue != .green }
+        let data = strokes.compactMap { shot in shot.yardsToGreen.map { ShotData(lie: shot.lieValue, distance: $0) } }
+        return data.count == strokes.count ? data : []
+    }
+
+    /// How far each club went: from where a shot was hit to where the next one was marked.
+    var clubSamples: [(club: String, yards: Double)] {
+        var samples: [(club: String, yards: Double)] = []
+        for number in Set(shots.map(\.holeNumber)) {
+            let hole = shots(onHole: number)
+            for (shot, next) in zip(hole, hole.dropFirst()) {
+                guard let club = shot.club, shot.lieValue != .green, shot.lieValue != .recovery else { continue }
+                let yards = Geo.yards(shot.point, next.point)
+                if yards >= 20 { samples.append((club, yards)) }
+            }
+        }
+        return samples
+    }
+}
+
+/// Where a ball was played from in Detailed mode. The "on green" marker has lie green and no club.
+@Model
+final class Shot {
+    var holeNumber: Int
+    var index: Int
+    var club: String?
+    var lie: String
+    var latitude: Double
+    var longitude: Double
+    var yardsToGreen: Double?
+    var round: Round?
+
+    init(holeNumber: Int, index: Int, club: String?, lie: ShotLie, point: GeoPoint, yardsToGreen: Double?) {
+        self.holeNumber = holeNumber
+        self.index = index
+        self.club = club
+        self.lie = lie.rawValue
+        self.latitude = point.lat
+        self.longitude = point.lon
+        self.yardsToGreen = yardsToGreen
+    }
+
+    var lieValue: ShotLie { ShotLie(rawValue: lie) ?? .rough }
+    var point: GeoPoint { GeoPoint(lat: latitude, lon: longitude) }
+}
+
+@Model
+final class Club {
+    var name: String
+    var sortOrder: Int
+    var inBag: Bool
+
+    init(name: String, sortOrder: Int, inBag: Bool = true) {
+        self.name = name
+        self.sortOrder = sortOrder
+        self.inBag = inBag
+    }
+
+    static let defaultNames = ["Dr", "3W", "5W", "4H", "5i", "6i", "7i", "8i", "9i", "PW", "GW", "SW", "LW"]
+
+    static func ensureDefaults(in context: ModelContext) {
+        guard (try? context.fetchCount(FetchDescriptor<Club>())) == 0 else { return }
+        for (i, name) in defaultNames.enumerated() {
+            context.insert(Club(name: name, sortOrder: i))
+        }
     }
 }
 

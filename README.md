@@ -25,6 +25,16 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
 - Bag: courses, demo rounds, delete data
 - Friends: placeholder until Phase 3
 
+## Phase 2 (done)
+
+- Course maps from OpenStreetMap: find by course name or at your location (Bag → course → Map)
+- Detailed mode (choose it when you tee off): satellite hole map, front / middle / back yardages, tap to measure
+- Mark shot with club and lie (lie is guessed from the map); On green; undo
+- Set green: tap the middle of any green the map is missing
+- Stock yardages for each club in Bag (median, spread, number of shots)
+- Strokes gained per round in Stats and on the round summary: off the tee, approach, short game, putting.
+  Putting works in Quick mode from first putt length. Benchmark: approximate tour averages.
+
 ## Checks
 
-Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), an Xcode build, and, on `phase-1`, a simulator launch that saves screenshots to the `ci-screens` branch.
+Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), an Xcode build, and, on `phase-*` branches, a simulator launch (including Detailed mode on the Old Course from OpenStreetMap) that saves screenshots to the `ci-screens` branch.

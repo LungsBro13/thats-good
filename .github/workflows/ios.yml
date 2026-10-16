@@ -38,8 +38,17 @@ jobs:
           echo "::notice title=Build::Xcode $(xcodebuild -version | head -1), exit $status, $(grep -cE '\.swift:[0-9]+:[0-9]+: warning:' "$RUNNER_TEMP/build.log") Swift warnings, $(grep -oE 'BUILD (SUCCEEDED|FAILED)' "$RUNNER_TEMP/build.log" | tail -1)"
           exit $status
 
+      - name: Check OpenStreetMap data for the test course
+        if: startsWith(github.ref, 'refs/heads/phase-')
+        run: |
+          q='[out:json][timeout:25];(way["golf"~"^(green|hole)$"](around:1500,56.3445,-2.8090););out tags;'
+          code=$(curl -s -m 40 -o "$RUNNER_TEMP/osm.json" -w "%{http_code}" -A "ThatsGood-CI" --data-urlencode "data=$q" https://overpass-api.de/api/interpreter || echo fail)
+          holes=$(grep -o '"golf": *"hole"' "$RUNNER_TEMP/osm.json" | wc -l | tr -d ' ')
+          greens=$(grep -o '"golf": *"green"' "$RUNNER_TEMP/osm.json" | wc -l | tr -d ' ')
+          echo "::notice title=OpenStreetMap::HTTP $code, $holes hole lines, $greens greens near the Old Course"
+
       - name: Launch in the simulator and take screenshots
-        if: github.ref == 'refs/heads/phase-1'
+        if: startsWith(github.ref, 'refs/heads/phase-')
         run: |
           udid=$(xcrun simctl list devices available | grep -m1 -E "iPhone 16 \(" | grep -oE "[0-9A-F-]{36}")
           xcrun simctl boot "$udid"
@@ -60,10 +69,28 @@ jobs:
           sleep 6
           xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running after opening a round"; exit 1; }
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/scoring.png"
-          echo "::notice title=Launch::App opened all 4 tabs and the scoring screen without crashing"
+          # Detailed mode on a real course from OpenStreetMap, standing on the 1st tee of the Old Course
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood 2>/dev/null || true
+          xcrun simctl uninstall "$udid" com.lungsbro13.thatsgood
+          xcrun simctl install "$udid" build/Debug-iphonesimulator/ThatsGood.app
+          xcrun simctl privacy "$udid" grant location com.lungsbro13.thatsgood
+          xcrun simctl location "$udid" set 56.34315,-2.80265
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab play -osmDemo
+          sleep 45
+          xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running in Detailed mode"; exit 1; }
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/detailed.png"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -demoData -tab stats
+          sleep 6
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/stats-sg.png"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag
+          sleep 6
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/bag-clubs.png"
+          echo "::notice title=Launch::App opened all tabs, the scoring screen and Detailed mode without crashing"
 
       - name: Save screenshots to the ci-screens branch
-        if: github.ref == 'refs/heads/phase-1'
+        if: startsWith(github.ref, 'refs/heads/phase-')
         run: |
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"

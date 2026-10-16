@@ -24,9 +24,14 @@ struct ScoringView: View {
             Hairline()
             ScrollView {
                 if let hole = round.hole(holeNumber), let score = round.score(for: holeNumber) {
-                    HoleEntryView(score: score, par: hole.par)
-                        .id(holeNumber)
-                        .padding(20)
+                    VStack(spacing: 24) {
+                        if round.isDetailed {
+                            DetailedHoleView(round: round, holeNumber: holeNumber, score: score, par: hole.par)
+                        }
+                        HoleEntryView(score: score, par: hole.par)
+                    }
+                    .id(holeNumber)
+                    .padding(20)
                 }
             }
             Hairline()

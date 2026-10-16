@@ -8,7 +8,7 @@ struct ThatsGoodApp: App {
             RootView()
                 .tint(Color.tgAccent)
         }
-        .modelContainer(for: [Course.self, Round.self, HoleScore.self])
+        .modelContainer(for: [Course.self, Round.self, HoleScore.self, Shot.self, Club.self])
     }
 }
 
@@ -31,7 +31,8 @@ struct RootView: View {
     /// Used by the CI screenshot step: `-demoData` loads demo rounds, `-tab stats` opens a tab.
     private func applyLaunchArguments() {
         let args = ProcessInfo.processInfo.arguments
-        if args.contains("-demoData"), (try? context.fetchCount(FetchDescriptor<Round>())) == 0 {
+        if args.contains("-demoData"),
+           (try? context.fetchCount(FetchDescriptor<Course>(predicate: #Predicate { $0.name == "Demo Golf Club" }))) == 0 {
             SampleData.load(into: context)
         }
         if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
@@ -69,5 +70,5 @@ struct RootView: View {
 
 #Preview {
     RootView()
-        .modelContainer(for: [Course.self, Round.self, HoleScore.self], inMemory: true)
+        .modelContainer(for: [Course.self, Round.self, HoleScore.self, Shot.self, Club.self], inMemory: true)
 }

@@ -38,6 +38,7 @@ struct HoleData {
     var green: GreenResult?
     var upAndDown: Bool?         // nil when the green was hit
     var penalties: Int
+    var shots: [ShotData] = []   // Detailed mode only; empty in Quick mode
 }
 
 /// One played round, ready for calculations.
