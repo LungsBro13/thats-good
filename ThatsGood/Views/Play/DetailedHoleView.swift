@@ -37,6 +37,9 @@ struct DetailedHoleView: View {
                     .font(.footnote)
                     .foregroundStyle(Color.tgLoss)
             }
+            if !onGreen, let player, let green = holeGeo {
+                CaddieCard(distance: Geo.yards(player, green.greenCenter), lie: lie)
+            }
             shotControls
         }
         .onAppear {
@@ -118,6 +121,11 @@ struct DetailedHoleView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(alignment: .topTrailing) { yardageBox.padding(10) }
         .overlay(alignment: .bottomLeading) { mapButtons.padding(10) }
+        .overlay(alignment: .topLeading) {
+            if !onGreen, let player, let green = holeGeo {
+                CaddieCard(distance: Geo.yards(player, green.greenCenter), lie: lie, compact: true).padding(10)
+            }
+        }
     }
 
     @ViewBuilder

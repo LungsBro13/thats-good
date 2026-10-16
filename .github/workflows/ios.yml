@@ -82,7 +82,7 @@ jobs:
           xcrun simctl install "$udid" build/dd/Build/Products/Debug-iphonesimulator/ThatsGood.app
           xcrun simctl privacy "$udid" grant location com.lungsbro13.thatsgood
           xcrun simctl location "$udid" set 56.34315,-2.80265
-          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab play -osmDemo
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -demoData -tab play -osmDemo
           sleep 45
           xcrun simctl spawn "$udid" launchctl list | grep -q thatsgood || { echo "::error title=Launch::App was not running in Detailed mode"; exit 1; }
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/detailed.png"
@@ -91,9 +91,17 @@ jobs:
           sleep 6
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/stats-sg.png"
           xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -demoData -tab stats -scrollPractice
+          sleep 6
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/practice.png"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag
           sleep 6
           xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/bag-clubs.png"
+          xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
+          xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab bag -importSample
+          sleep 6
+          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/shots/import.png"
           xcrun simctl terminate "$udid" com.lungsbro13.thatsgood
           xcrun simctl launch "$udid" com.lungsbro13.thatsgood -tab friends -socialDemo
           sleep 6

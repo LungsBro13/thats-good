@@ -49,6 +49,7 @@ struct StatsView: View {
         let summary = RoundStats.summarize(data)
 
         NavigationStack {
+            ScrollViewReader { scroller in
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     SegmentedPicker(options: RoundFilter.allCases, selection: $filter) { $0.label }
@@ -63,6 +64,7 @@ struct StatsView: View {
                     } else {
                         trendSection(data, summary: summary)
                         strokesGainedSection(StrokesGained.summarize(data))
+                        PracticePlanSection(data: data).id("practice")
                         keyNumbers(summary)
                         byParSection(summary)
                         mixSection(summary)
@@ -70,6 +72,15 @@ struct StatsView: View {
                     }
                 }
                 .padding(20)
+            }
+            #if DEBUG
+            .onAppear {
+                // Used by the CI screenshot step.
+                if ProcessInfo.processInfo.arguments.contains("-scrollPractice") {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { scroller.scrollTo("practice", anchor: .top) }
+                }
+            }
+            #endif
             }
             .background(Color.tgBackground)
             .navigationTitle("Stats")
@@ -259,5 +270,60 @@ struct SGBarRow: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label): \(String(format: "%+.1f", value)) strokes per round")
+    }
+}
+
+/// The 3 biggest leaks against a scratch golfer, with what to practise.
+struct PracticePlanSection: View {
+    let data: [RoundData]
+
+    var body: some View {
+        let sg = StrokesGained.summarize(data)
+        let plan = PracticePlan.build(data)
+
+        if sg.hasData {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    SectionLabel("Practice plan")
+                    Spacer()
+                    if !plan.isEmpty {
+                        Text(String(format: "%.1f strokes to find", plan.reduce(0) { $0 + $1.toGain }))
+                            .font(.caption)
+                            .foregroundStyle(Color.tgMuted)
+                    }
+                }
+                .padding(.bottom, 8)
+                if plan.isEmpty {
+                    Text("No big leaks against a scratch golfer in these rounds. Keep it up.")
+                        .font(.footnote)
+                        .foregroundStyle(Color.tgMuted)
+                }
+                ForEach(Array(plan.enumerated()), id: \.element.id) { i, item in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Text("\(i + 1)")
+                                .font(.headline)
+                                .foregroundStyle(Color.tgAccent)
+                            Text(item.focus).font(.headline)
+                            Spacer()
+                            Text(String(format: "%.1f / round", item.toGain))
+                                .font(.subheadline.weight(.semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(Color.tgLoss)
+                        }
+                        Text(item.detail).font(.footnote).foregroundStyle(Color.tgMuted)
+                        (Text("Drill: ").fontWeight(.semibold) + Text(item.drill))
+                            .font(.footnote)
+                    }
+                    .padding(.vertical, 12)
+                    .overlay(alignment: .bottom) { Hairline() }
+                    .accessibilityElement(children: .combine)
+                }
+                Text("Strokes a round you'd gain by matching a scratch golfer in each area.")
+                    .font(.caption)
+                    .foregroundStyle(Color.tgMuted)
+                    .padding(.top, 8)
+            }
+        }
     }
 }

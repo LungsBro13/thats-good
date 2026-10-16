@@ -394,5 +394,78 @@ let feedItems = TournamentEngine.feed(two, strokeScores, events: [
 ])
 check(feedItems.first?.text == "birdie on 1" && feedItems.first?.name == "P1", "feed shows birdies")
 
+
+// MARK: Smart caddie
+
+let emptyModel = PlayerModel.build([])
+check(close(emptyModel.expected(.fairway, 150), StrokesGained.expected(.fairway, 150)), "no data: the caddie uses the baseline")
+
+let oneHole = HoleData(par: 4, strokeIndex: 1, strokes: 4, putts: 2, firstPuttFeet: 12, fairway: .hit, green: .hit,
+                       upAndDown: nil, penalties: 0, shots: [ShotData(lie: .tee, distance: 400), ShotData(lie: .fairway, distance: 150)])
+let builtModel = PlayerModel.build([RoundData(date: .now, courseRating: 72, slope: 113, handicapIndex: nil, holes: [oneHole])])
+check(builtModel.shotCount == 2 && close(builtModel.overall, (0.01 + 0.055) / 2), "player model: strokes to hole out against baseline")
+
+let bagYards = Caddie.yardages(bag: ["Dr", "7i", "8i", "PW"],
+                               measured: [ClubDistance(club: "7i", count: 5, average: 158, median: 157, spread: 6),
+                                          ClubDistance(club: "8i", count: 2, average: 170, median: 170, spread: 6)])
+check(bagYards.first { $0.club == "7i" } == ClubYardage(club: "7i", yards: 157, fromData: true), "own median once a club has 3 shots")
+check(bagYards.first { $0.club == "8i" }?.fromData == false, "typical yardage until then")
+
+let fullBag = Caddie.yardages(bag: Array(Caddie.typicalYards.keys), measured: [])
+check(Caddie.club(for: 158, clubs: Caddie.usable(fullBag, lie: .fairway))?.club == "7i", "158 yards is a 7 iron")
+check(Caddie.club(for: 300, clubs: Caddie.usable(fullBag, lie: .fairway))?.club == "3W", "too far: longest club, no driver off the deck")
+
+var layupModel = PlayerModel.empty
+layupModel.overall = 0.2
+layupModel.shotCount = 60
+for i in layupModel.bands.indices {
+    if layupModel.bands[i].lower == 210 { layupModel.bands[i].shots = 30; layupModel.bands[i].totalDiff = 18 }
+    if layupModel.bands[i].lower == 90 { layupModel.bands[i].shots = 30; layupModel.bands[i].totalDiff = -9 }
+}
+let layupAdvice = Caddie.advise(distance: 225, lie: .fairway, model: layupModel, clubs: fullBag)
+check(layupAdvice.recommendsLayup && layupAdvice.layup?.club == "PW", "weak from 225, strong from 100: lay up with PW")
+check(layupModel.favouriteBand?.lower == 90, "favourite distance is the 90–120 band")
+check(!Caddie.advise(distance: 225, lie: .fairway, model: emptyModel, clubs: fullBag).recommendsLayup, "baseline player goes for it")
+
+// Practice plan: lots of 3-putts from 10 ft
+let puttHole = HoleData(par: 4, strokeIndex: 1, strokes: 5, putts: 3, firstPuttFeet: 10, fairway: .hit, green: .hit,
+                        upAndDown: nil, penalties: 0)
+let puttRound = RoundData(date: .now, courseRating: 72, slope: 113, handicapIndex: nil, holes: Array(repeating: puttHole, count: 18))
+let plan = PracticePlan.build([puttRound])
+check(plan.first?.category == .putting && plan.first?.focus == "Putts from 7–20 ft", "practice plan finds the putting leak")
+check(PracticePlan.build([]).isEmpty, "no data, no plan")
+
+
+// MARK: Importing scores
+
+check(ImportedRound(date: .now, courseName: "A", teeName: "", adjustedGross: 78, courseRating: 69.7, slope: 118).differential == 7.9,
+      "differential: 113/118 × (78 − 69.7) = 7.9")
+check(ImportedRound(date: .now, courseName: "A", teeName: "", adjustedGross: 80, courseRating: 70.8, slope: 128, pcc: -1).differential == 9.0,
+      "differential with PCC −1")
+
+let csv = """
+Date,Course,Tee,Adj Gross,Course Rating,Slope,PCC,Holes,Pars
+08/10/2026,"Links, North",Blue,78,69.7,118,0,,
+2026-09-15,Hill Club,Blue,84,70.8,128,0,4 4 1 5 3 3 3 5 4 7 7 7 5 3 4 3 4 4,4 4 3 4 3 4 3 3 4 5 3 5 4 3 4 3 4 4
+31/02/2026,Bad,Blue,80,70,120,0,,
+"""
+let parsed = ScoreImport.parse(csv)
+check(parsed.rounds.count == 2 && parsed.problems.count == 1, "CSV: two good rows, one bad date")
+check(parsed.rounds.first?.courseName == "Links, North", "CSV: quoted course name with a comma")
+check(parsed.rounds.last?.holeStrokes.count == 18 && parsed.rounds.last?.holePars.reduce(0, +) == 67, "CSV: hole-by-hole card")
+let tsv = "date\tcourse\tscore\trating\tslope\n12/06/2023\tShort Course\t75\t65.9\t112\n"
+check(ScoreImport.parse(tsv).rounds.first?.adjustedGross == 75, "pasted from a spreadsheet (tabs)")
+check(ScoreImport.parse("hello\n1,2").rounds.isEmpty, "no header, nothing imported")
+check(ScoreImport.newOnly(parsed.rounds, existing: [parsed.rounds[0]]).count == 1, "already imported scores are skipped")
+
+// 20 imported differentials: the best 8 average to the index
+let diffs = [11.9, 11.8, 12.7, 10.6, 7.5, 7.6, 7.2, 9.4, 13.8, 17.2, 12.0, 9.0, 9.0, 10.8, 8.9, 10.8, 11.7, 12.7, 9.9, 7.9]
+let importedTwenty = diffs.enumerated().map { i, d in
+    // slope 113, rating 70: the differential is just score − 70 (scores are whole, so use PCC to hit .x)
+    ImportedRound(date: Date(timeIntervalSince1970: Double(i) * 86_400), courseName: "C\(i)", teeName: "",
+                  adjustedGross: 90, courseRating: 90 - d, slope: 113)
+}
+check(close(Handicap.currentIndex([], imported: importedTwenty), 8.3), "best 8 of 20 imported differentials: 8.3")
+
 print(failures == 0 ? "\nAll logic tests passed." : "\n\(failures) logic test(s) failed.")
 exit(failures == 0 ? 0 : 1)

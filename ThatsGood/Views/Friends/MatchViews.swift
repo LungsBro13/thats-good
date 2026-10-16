@@ -76,6 +76,7 @@ struct NewMatchView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Course.name) private var courses: [Course]
     @Query(filter: #Predicate<Round> { $0.isComplete }) private var myRounds: [Round]
+    @Query private var imported: [ImportedScore]
 
     @State private var format: MatchFormat = .nassau
     @State private var basis: HandicapBasis = .net
@@ -87,7 +88,7 @@ struct NewMatchView: View {
     @State private var guestHandicap = ""
 
     private var myIndex: Double? {
-        Handicap.currentIndex(myRounds.map(\.data))
+        Handicap.currentIndex(myRounds.map(\.data), imported: imported.map(\.data))
             ?? PlayerProgress.compute((backend.rounds[backend.myID ?? UUID()] ?? []).map(\.data)).handicap
     }
 

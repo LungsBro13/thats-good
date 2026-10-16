@@ -6,6 +6,7 @@ struct BagView: View {
     @Query(sort: \Course.name) private var courses: [Course]
     @Query private var rounds: [Round]
     @Query(sort: \Club.sortOrder) private var clubs: [Club]
+    @Query private var imported: [ImportedScore]
 
     private var distances: [ClubDistance] {
         ClubStats.summarize(rounds.flatMap(\.clubSamples), order: clubs.map(\.name))
@@ -18,6 +19,7 @@ struct BagView: View {
     @State private var editingCourse: Course?
     @State private var addingCourse = false
     @State private var confirmDelete = false
+    @State private var openImport = false
 
     var body: some View {
         NavigationStack {
@@ -76,6 +78,24 @@ struct BagView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        ImportScoresView()
+                    } label: {
+                        HStack {
+                            Text("Import scores")
+                            Spacer()
+                            if !imported.isEmpty {
+                                Text("\(imported.count) imported").foregroundStyle(Color.tgMuted)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Score history")
+                } footer: {
+                    Text("Bring in old scores from your golf club or national handicap app, so your handicap and trend start from your real history.")
+                }
+
+                Section {
                     Button("Load demo rounds") { SampleData.load(into: context) }
                     Button("Delete all rounds", role: .destructive) { confirmDelete = true }
                         .disabled(rounds.isEmpty)
@@ -86,6 +106,10 @@ struct BagView: View {
                 }
             }
             .navigationTitle("Bag")
+            .navigationDestination(isPresented: $openImport) { ImportScoresView() }
+            #if DEBUG
+            .onAppear { if ProcessInfo.processInfo.arguments.contains("-importSample") { openImport = true } }
+            #endif
             .sheet(item: $editingCourse) { course in
                 CourseEditorView(course: course)
             }

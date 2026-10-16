@@ -6,10 +6,11 @@ struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Query(filter: #Predicate<Round> { $0.isComplete }, sort: \Round.playedOn, order: .reverse)
     private var rounds: [Round]
+    @Query private var imported: [ImportedScore]
 
     var body: some View {
         let data = rounds.map(\.data)
-        let history = Handicap.history(data)
+        let history = Handicap.history(data, imported: imported.map(\.data))
 
         NavigationStack {
             ScrollView {
@@ -18,7 +19,7 @@ struct HomeView: View {
                         .font(.caption.weight(.bold))
                         .tracking(2)
 
-                    handicapSection(history: history, eligible: Handicap.eligibleRoundCount(data))
+                    handicapSection(history: history, eligible: Handicap.eligibleRoundCount(data) + imported.count)
 
                     Button("Start a round") { selectedTab = .play }
                         .buttonStyle(PrimaryButtonStyle())
@@ -53,6 +54,11 @@ struct HomeView: View {
                                  : "\(change < 0 ? "−" : "+")\(formatDecimal(abs(change))) since last round")
                                 .font(.footnote.weight(.medium))
                                 .foregroundStyle(change <= 0 ? Color.tgAccent : Color.tgLoss)
+                        }
+                        if !imported.isEmpty {
+                            Text("Includes \(imported.count) imported score\(imported.count == 1 ? "" : "s")")
+                                .font(.caption)
+                                .foregroundStyle(Color.tgMuted)
                         }
                     }
                 } else {

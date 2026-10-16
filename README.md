@@ -72,6 +72,16 @@ If the Bundle Identifier is taken, change `com.lungsbro13.thatsgood` to somethin
 - Any player enters scores for their group or match (**Enter scores**); everyone's board updates every few seconds
 - Results come from the raw scores (`ThatsGood/Logic/Tournament.swift`, tested)
 
+## Phase 4 (done): smart caddie and practice plan
+
+- Detailed mode shows a **Caddie** box on the map and a card under it: the club for the distance (your own median once
+  a club has 3 measured shots, typical yardages until then), and when to lay up
+- Lay-up advice compares what you average going for it with laying up to each distance, using your own scoring by
+  distance from Detailed rounds (`ThatsGood/Logic/Caddie.swift`, tested)
+- Bag → **Import scores**: bring in past scores (CSV file or pasted text, e.g. from a national handicap app). They count
+  towards the handicap estimate; an optional hole-by-hole card is kept too. Nothing personal is stored in the repo.
+- Stats → **Practice plan**: your 3 biggest leaks against a scratch golfer, where exactly you lose shots, and a drill for each
+
 ## Checks
 
 Every push runs `.github/workflows/ios.yml` on a Mac: logic tests (`Tests/LogicTests`), an Xcode build, and, on `phase-*` branches, a simulator launch (including Detailed mode on the Old Course from OpenStreetMap) that saves screenshots to the `ci-screens` branch.
