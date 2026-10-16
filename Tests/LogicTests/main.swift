@@ -257,7 +257,7 @@ check(MatchEngine.pairResult(mp, mpScores, "dave", "sam") == .loss, "Dave lost t
 // Net match play: Dave's 2 strokes come on SI 1 and 2 (holes 5 and 12)
 mp = mpNet
 mpScores = ["sam": card(Array(repeating: 0, count: 18)), "dave": card(Array(repeating: 0, count: 18))]
-check(MatchEngine.outcome(mp, mpScores).status == "Dave 2 UP", "net: level gross scores, Dave wins his stroke holes")
+check(MatchEngine.outcome(mp, mpScores).status == "Dave 2&1", "net: level gross scores, Dave wins his stroke holes (holes 5 and 12) and closes it out 2&1")
 
 // Nassau: Sam wins the front by one, Dave the back by one, overall halved
 let nassau = setup(.nassau, players: [sam, dave])
