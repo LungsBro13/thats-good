@@ -17,21 +17,27 @@ extension WrappedContext {
 }
 
 /// Bold colours for the slides. Each has a background, a shape colour and a text colour with strong contrast.
+/// Slide colours from a golf course: fairway, green, fringe, rough and bunker sand.
 struct WrappedPalette {
     let background: Color
-    let blob: Color
+    let stripe: Color      // mowing stripes
+    let bunker: Color      // the sand shape behind the golfer
     let ink: Color
+    let golfer: Golfer.Style
 
-    static let all: [WrappedPalette] = [
-        WrappedPalette(background: Color(hex: 0xB5F06B), blob: Color(hex: 0x4FA83D), ink: Color(hex: 0x0B1A0E)),
-        WrappedPalette(background: Color(hex: 0xFF7A3D), blob: Color(hex: 0xFFB347), ink: Color(hex: 0x1A0A04)),
-        WrappedPalette(background: Color(hex: 0x3557F0), blob: Color(hex: 0x8CC3FF), ink: .white),
-        WrappedPalette(background: Color(hex: 0xFF5C9A), blob: Color(hex: 0xFFC0D9), ink: Color(hex: 0x1A0610)),
-        WrappedPalette(background: Color(hex: 0x6E43F0), blob: Color(hex: 0xC9A8FF), ink: .white),
-        WrappedPalette(background: Color(hex: 0xFFD23D), blob: Color(hex: 0xFF8A3D), ink: Color(hex: 0x1A1404)),
-        WrappedPalette(background: Color(hex: 0x14B89A), blob: Color(hex: 0xB5F06B), ink: Color(hex: 0x04201A)),
-    ]
-    static let outro = WrappedPalette(background: Color(hex: 0x0A0B0B), blob: Color(hex: 0x2F7A2A), ink: .white)
+    static let fairway = WrappedPalette(background: .tgFairway, stripe: .tgFairwayStripe, bunker: .tgSand,
+                                        ink: .tgRough, golfer: .onGreen)
+    static let green = WrappedPalette(background: .tgGreen, stripe: .tgGreenStripe, bunker: .tgSand,
+                                      ink: .tgRough, golfer: .dark)
+    static let sand = WrappedPalette(background: .tgSand, stripe: Color(hex: 0xE2CD97), bunker: .tgFringe,
+                                     ink: Color(hex: 0x3D2D12), golfer: .dark)
+    static let rough = WrappedPalette(background: .tgRoughText, stripe: Color(hex: 0x24553B), bunker: .tgSand.opacity(0.9),
+                                      ink: Color(hex: 0xF3F6F2), golfer: .light)
+    static let fringe = WrappedPalette(background: .tgFringe, stripe: Color(hex: 0xBEDFA3), bunker: .tgSandLight,
+                                       ink: .tgRough, golfer: .dark)
+    static let all: [WrappedPalette] = [fairway, sand, green, rough, fringe]
+    static let outro = WrappedPalette(background: .tgRough, stripe: .tgRoughStripe, bunker: .tgSand.opacity(0.25),
+                                      ink: Color(hex: 0xF3F6F2), golfer: .light)
 
     static func forSlide(_ index: Int, kind: WrappedSlide.Kind) -> WrappedPalette {
         kind == .outro ? outro : all[index % all.count]
@@ -74,7 +80,7 @@ struct RoundWrappedView: View {
                 VStack(spacing: 14) {
                     progressBars(ink: palette.ink)
                     HStack {
-                        Text("ROUND WRAPPED").font(.caption.weight(.heavy)).tracking(2)
+                        Text("ROUND WRAPPED").font(.brandTitle(20, bold: true)).tracking(2.5)
                         Spacer()
                         Button(action: onFinish) {
                             Image(systemName: "xmark").font(.headline).frame(width: 44, height: 44)
@@ -146,8 +152,8 @@ struct RoundWrappedView: View {
                     Label("Share to your story", systemImage: "square.and.arrow.up")
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: 52)
-                        .foregroundStyle(Color(hex: 0x0A0B0B))
-                        .background(Color(hex: 0xB5F06B), in: Capsule())
+                        .foregroundStyle(.white)
+                        .background(Color.tgFairway, in: RoundedRectangle(cornerRadius: 12))
                 }
             }
             Button(action: onFinish) {
@@ -155,7 +161,7 @@ struct RoundWrappedView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .foregroundStyle(palette.ink)
-                    .overlay(Capsule().stroke(palette.ink.opacity(0.5), lineWidth: 1.5))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(palette.ink.opacity(0.5), lineWidth: 1.5))
             }
         }
         .padding(.bottom, 12)
@@ -271,22 +277,21 @@ struct WrappedBackground: View {
     @State private var drift = false
 
     var body: some View {
-        ZStack {
-            palette.background
-            Circle()
-                .fill(palette.blob)
-                .frame(width: 420, height: 420)
-                .blur(radius: 60)
-                .offset(x: drift ? 140 : -120, y: drift ? -260 : -160)
-            Circle()
-                .fill(palette.blob.opacity(0.7))
-                .frame(width: 320, height: 320)
-                .blur(radius: 50)
-                .offset(x: drift ? -150 : 130, y: drift ? 300 : 220)
+        ZStack(alignment: .bottomTrailing) {
+            MowingStripes(base: palette.background, stripe: palette.stripe, width: 48)
+            // A bunker, drifting gently, with the golfer standing beside it.
+            Ellipse()
+                .fill(palette.bunker)
+                .frame(width: 240, height: 120)
+                .rotationEffect(.degrees(drift ? -8 : -3))
+                .offset(x: 50, y: drift ? -118 : -110)
+            Golfer(style: palette.golfer, height: 150)
+                .padding(.trailing, 40)
+                .padding(.bottom, 150)
         }
         .ignoresSafeArea()
         .onAppear {
-            withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) { drift = true }
+            withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) { drift = true }
         }
     }
 }
@@ -302,7 +307,10 @@ struct WrappedShareCard: View {
         let highlights = slides.filter { keep.contains($0.kind) }.prefix(4)
 
         VStack(alignment: .leading, spacing: 18) {
-            Text("THAT'S GOOD").font(.system(size: 14, weight: .heavy)).tracking(3)
+            HStack(spacing: 8) {
+                Golfer(style: .dark, height: 26)
+                Wordmark(size: 15)
+            }
             Spacer()
             Text(context.courseName.uppercased()).font(.system(size: 14, weight: .heavy)).tracking(2).opacity(0.75)
             HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -320,14 +328,13 @@ struct WrappedShareCard: View {
             Spacer()
             Text(round.date.formatted(date: .long, time: .omitted)).font(.system(size: 13, weight: .semibold)).opacity(0.7)
         }
-        .foregroundStyle(Color(hex: 0x0B1A0E))
+        .foregroundStyle(Color.tgRough)
         .padding(32)
         .frame(width: 360, height: 640, alignment: .leading)
         .background {
-            ZStack {
-                Color(hex: 0xB5F06B)
-                Circle().fill(Color(hex: 0x4FA83D)).frame(width: 380).blur(radius: 50).offset(x: 160, y: -240)
-                Circle().fill(Color(hex: 0xFFD23D).opacity(0.8)).frame(width: 300).blur(radius: 50).offset(x: -150, y: 260)
+            ZStack(alignment: .topTrailing) {
+                MowingStripes(base: .tgFairway, stripe: .tgFairwayStripe, width: 40)
+                Ellipse().fill(Color.tgSand).frame(width: 200, height: 100).rotationEffect(.degrees(-6)).offset(x: 60, y: 70)
             }
         }
         .clipped()

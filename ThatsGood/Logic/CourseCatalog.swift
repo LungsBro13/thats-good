@@ -10,6 +10,7 @@ struct CatalogCourse: Codable, Identifiable, Hashable, Sendable {
     var lat: Double?
     var lon: Double?
     var tees: [CatalogTee]
+    var note: String? = nil  // what the database sent, when no tee could be used
 
     /// "Chisholm Links", or "Royal Auckland and Grange – Grange/Middlemore" when the club has several courses.
     var displayName: String {

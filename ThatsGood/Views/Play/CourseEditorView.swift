@@ -23,6 +23,7 @@ struct CourseEditorView: View {
     @State private var searching = false
     @State private var searchMessage: String?
     @State private var strokeIndexGuessed = false
+    @State private var loadingDetails = false
 
     init(course: Course? = nil) {
         self.course = course
@@ -205,10 +206,15 @@ extension CourseEditorView {
                     Text(chosen.displayName).font(.body.weight(.semibold))
                     if !chosen.place.isEmpty { Text(chosen.place).font(.caption).foregroundStyle(Color.tgMuted) }
                 }
-                if chosen.playableTees.isEmpty {
+                if loadingDetails {
+                    ProgressView("Getting the tees…")
+                } else if chosen.playableTees.isEmpty {
                     Text("No tees with a course rating in the database. Fill in the scorecard below.")
                         .font(.footnote)
                         .foregroundStyle(Color.tgMuted)
+                    if let note = chosen.note {
+                        Text(note).font(.caption2).foregroundStyle(Color.tgMuted)
+                    }
                 }
                 ForEach(chosen.playableTees, id: \.self) { tee in
                     Button { apply(chosen, tee) } label: {
@@ -277,7 +283,19 @@ extension CourseEditorView {
 
     private func pick(_ course: CatalogCourse) {
         chosen = course
-        if course.playableTees.count == 1, let tee = course.playableTees.first { apply(course, tee) }
+        if course.playableTees.isEmpty {
+            // Search results can leave the tees out: ask for the whole course.
+            Task {
+                loadingDetails = true
+                defer { loadingDetails = false }
+                if let full = try? await Backend.shared.catalogCourse(course.id), chosen?.id == course.id {
+                    chosen = full
+                    if full.playableTees.count == 1, let tee = full.playableTees.first { apply(full, tee) }
+                }
+            }
+        } else if course.playableTees.count == 1, let tee = course.playableTees.first {
+            apply(course, tee)
+        }
     }
 
     private func apply(_ course: CatalogCourse, _ tee: CatalogTee) {
