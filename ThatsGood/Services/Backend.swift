@@ -332,7 +332,7 @@ final class Backend: ObservableObject {
                 status = .needsProfile
             }
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
     }
 
@@ -377,7 +377,7 @@ final class Backend: ObservableObject {
             await refreshMatches()
             await refreshTournaments()
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
     }
 
@@ -438,7 +438,7 @@ final class Backend: ObservableObject {
             for round in pending { round.uploadedAt = .now }
             await refresh()
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
     }
 
@@ -452,8 +452,15 @@ final class Backend: ObservableObject {
         do {
             try await work(api)
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
+    }
+
+    /// A cancelled load (the screen closed or refreshed again) isn't a real problem, so it shows no message.
+    static func isCancel(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let e = error as? URLError, e.code == .cancelled { return true }
+        return (error as NSError).code == NSURLErrorCancelled && (error as NSError).domain == NSURLErrorDomain
     }
 
     func friendly(_ error: Error) -> String {

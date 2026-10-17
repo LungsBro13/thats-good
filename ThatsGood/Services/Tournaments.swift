@@ -274,7 +274,7 @@ extension Backend {
             let scores = Dictionary(grouping: try await api.tournamentScores(ids), by: \.tournamentID)
             tournaments = list.map { LiveTournament(tournament: $0, players: players[$0.id] ?? [], scores: scores[$0.id] ?? []) }
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
     }
 
@@ -292,7 +292,7 @@ extension Backend {
                 tournaments.remove(at: i)  // deleted by the organiser
             }
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
     }
 

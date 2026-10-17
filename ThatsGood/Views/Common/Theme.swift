@@ -60,8 +60,9 @@ func formatDecimal(_ value: Double?, digits: Int = 1) -> String {
 
 extension Font {
     /// Cormorant Garamond, the font in the logo (bundled in ThatsGood/Fonts, free under the SIL Open Font License).
+    /// Built from the UIFont directly, so the app-wide rounded design can't replace it.
     static func brandTitle(_ size: CGFloat, bold: Bool = false) -> Font {
-        .custom(bold ? "CormorantGaramond-Bold" : "CormorantGaramond-SemiBold", size: size)
+        Font(BrandFonts.uiFont(size, bold: bold) as CTFont)
     }
 }
 
@@ -88,6 +89,7 @@ struct Wordmark: View {
     var body: some View {
         Text("THAT’S GOOD")
             .font(.brandTitle(size))
+            .fontDesign(nil)  // keep the logo font: the app-wide rounded design would otherwise reshape it
             .tracking(size * 0.14)
             .foregroundStyle(color)
             .accessibilityLabel("That's Good")

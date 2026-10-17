@@ -166,7 +166,7 @@ extension Backend {
             let scores = Dictionary(grouping: try await api.matchScores(ids), by: \.matchID)
             matches = list.map { LiveMatch(match: $0, players: players[$0.id] ?? [], scores: Backend.table(scores[$0.id] ?? [])) }
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
     }
 
@@ -180,7 +180,7 @@ extension Backend {
             matches[j].scores = Backend.table(scores)
             if let latest { matches[j].match = latest }
         } catch {
-            message = friendly(error)
+            message = Backend.isCancel(error) ? nil : friendly(error)
         }
     }
 
