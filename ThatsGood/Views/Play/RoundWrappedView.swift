@@ -26,7 +26,7 @@ struct WrappedPalette {
     let golfer: Golfer.Style
 
     static let fairway = WrappedPalette(background: .tgFairway, stripe: .tgFairwayStripe, bunker: .tgSand,
-                                        ink: .tgRough, golfer: .dark)
+                                        ink: .tgRough, golfer: .onGreen)
     static let green = WrappedPalette(background: .tgGreen, stripe: .tgGreenStripe, bunker: .tgSand,
                                       ink: .tgRough, golfer: .dark)
     static let sand = WrappedPalette(background: .tgSand, stripe: Color(hex: 0xE2CD97), bunker: .tgFringe,
