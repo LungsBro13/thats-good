@@ -1,14 +1,51 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct ThatsGoodApp: App {
+    init() { Self.styleBars() }
+
     var body: some Scene {
         WindowGroup {
             RootView()
-                .tint(Color.tgAccent)
+                .tint(Color.tgFairway)
+                .fontDesign(.rounded)
+                .preferredColorScheme(.light)  // the golf course look is light; a dark version can come later
         }
         .modelContainer(for: [Course.self, Round.self, HoleScore.self, Shot.self, Club.self, ImportedScore.self])
+    }
+}
+
+extension ThatsGoodApp {
+    /// Deep rough tab bar, and serif titles like the logo.
+    static func styleBars() {
+        let rough = UIColor(Color.tgRough)
+        let tab = UITabBarAppearance()
+        tab.configureWithOpaqueBackground()
+        tab.backgroundColor = rough
+        tab.shadowColor = .clear
+        for item in [tab.stackedLayoutAppearance, tab.inlineLayoutAppearance, tab.compactInlineLayoutAppearance] {
+            item.normal.iconColor = UIColor(Color(hex: 0xA9C9B4))
+            item.normal.titleTextAttributes = [.foregroundColor: UIColor(Color(hex: 0xA9C9B4))]
+            item.selected.iconColor = UIColor(Color.tgPale)
+            item.selected.titleTextAttributes = [.foregroundColor: UIColor(Color.tgPale)]
+        }
+        UITabBar.appearance().standardAppearance = tab
+        UITabBar.appearance().scrollEdgeAppearance = tab
+
+        func serif(_ size: CGFloat, _ weight: UIFont.Weight) -> UIFont {
+            let base = UIFont.systemFont(ofSize: size, weight: weight)
+            return UIFont(descriptor: base.fontDescriptor.withDesign(.serif) ?? base.fontDescriptor, size: size)
+        }
+        let nav = UINavigationBarAppearance()
+        nav.configureWithTransparentBackground()
+        nav.backgroundColor = UIColor(Color.tgBackground)
+        nav.largeTitleTextAttributes = [.font: serif(34, .bold), .foregroundColor: rough]
+        nav.titleTextAttributes = [.font: serif(18, .semibold), .foregroundColor: rough]
+        UINavigationBar.appearance().standardAppearance = nav
+        UINavigationBar.appearance().scrollEdgeAppearance = nav
+        UINavigationBar.appearance().compactAppearance = nav
     }
 }
 

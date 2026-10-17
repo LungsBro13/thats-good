@@ -19,24 +19,32 @@ struct Hairline: View {
     }
 }
 
+/// Fairway green, with a darker edge underneath that flattens when pressed.
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
+            .font(.headline.weight(.heavy))
             .frame(maxWidth: .infinity, minHeight: 52)
-            .foregroundStyle(Color.tgBackground)
-            .background(Color.primary.opacity(configuration.isPressed ? 0.75 : 1),
-                        in: RoundedRectangle(cornerRadius: 10))
+            .foregroundStyle(.white)
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12).fill(Color.tgFairwayDeep).offset(y: configuration.isPressed ? 0 : 3)
+                    RoundedRectangle(cornerRadius: 12).fill(Color.tgFairway)
+                }
+            }
+            .offset(y: configuration.isPressed ? 2 : 0)
+            .padding(.bottom, 3)
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
+            .font(.headline.weight(.bold))
             .frame(maxWidth: .infinity, minHeight: 52)
-            .foregroundStyle(Color.primary)
-            .background(RoundedRectangle(cornerRadius: 10).stroke(Color.tgLine))
+            .foregroundStyle(Color.tgRough)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color.tgSurface))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.tgLine, lineWidth: 1.5))
             .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }
