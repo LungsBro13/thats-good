@@ -89,6 +89,7 @@ struct Wordmark: View {
     var body: some View {
         Text("THAT’S GOOD")
             .font(.brandTitle(size))
+            .fontDesign(nil)  // keep the logo font: the app-wide rounded design would otherwise reshape it
             .tracking(size * 0.14)
             .foregroundStyle(color)
             .accessibilityLabel("That's Good")
