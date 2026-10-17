@@ -26,5 +26,5 @@ Colours: a golf course. Only greens and sand.
 
 Mowing stripes: alternate two shades of the same green in vertical bands (36 to 48 pt wide).
 Corners: cards 14 to 16 pt, buttons 12 pt, chips 5 to 8 pt.
-Title: Cormorant Garamond, capitals, wide letter spacing. Body: Nunito.
+Title: Cormorant Garamond SemiBold (the logo's font), capitals, letter spacing 0.14 em. Bundled in `ThatsGood/Fonts` (SIL Open Font License). Body: the iPhone's rounded system font.
 Preview of the new look: https://claude.ai/artifact/Pe3u28KSJBsWZR7bCqXDi6

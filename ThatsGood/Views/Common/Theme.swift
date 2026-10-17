@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreText
 
 extension Color {
     init(hex: UInt32) {
@@ -57,14 +58,36 @@ func formatDecimal(_ value: Double?, digits: Int = 1) -> String {
     return value.formatted(.number.precision(.fractionLength(digits)))
 }
 
-/// "THAT'S GOOD" in the serif title face, spaced out like the logo.
+extension Font {
+    /// Cormorant Garamond, the font in the logo (bundled in ThatsGood/Fonts, free under the SIL Open Font License).
+    static func brandTitle(_ size: CGFloat, bold: Bool = false) -> Font {
+        .custom(bold ? "CormorantGaramond-Bold" : "CormorantGaramond-SemiBold", size: size)
+    }
+}
+
+enum BrandFonts {
+    /// Loads the bundled fonts. Call once at launch, before anything uses them.
+    static func register() {
+        for name in ["CormorantGaramond-SemiBold", "CormorantGaramond-Bold"] {
+            guard let url = Bundle.main.url(forResource: name, withExtension: "ttf") else { continue }
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
+    }
+
+    static func uiFont(_ size: CGFloat, bold: Bool) -> UIFont {
+        UIFont(name: bold ? "CormorantGaramond-Bold" : "CormorantGaramond-SemiBold", size: size)
+            ?? .systemFont(ofSize: size, weight: bold ? .bold : .semibold)
+    }
+}
+
+/// "THAT'S GOOD" in the logo's font, spaced out like the logo.
 struct Wordmark: View {
     var size: CGFloat = 22
     var color: Color = .tgRough
 
     var body: some View {
         Text("THAT’S GOOD")
-            .font(.system(size: size, weight: .semibold, design: .serif))
+            .font(.brandTitle(size))
             .tracking(size * 0.14)
             .foregroundStyle(color)
             .accessibilityLabel("That's Good")

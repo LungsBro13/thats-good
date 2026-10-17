@@ -4,7 +4,10 @@ import UIKit
 
 @main
 struct ThatsGoodApp: App {
-    init() { Self.styleBars() }
+    init() {
+        BrandFonts.register()
+        Self.styleBars()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -18,7 +21,7 @@ struct ThatsGoodApp: App {
 }
 
 extension ThatsGoodApp {
-    /// Deep rough tab bar, and serif titles like the logo.
+    /// Deep rough tab bar, and titles in the logo font.
     static func styleBars() {
         let rough = UIColor(Color.tgRough)
         let tab = UITabBarAppearance()
@@ -34,15 +37,11 @@ extension ThatsGoodApp {
         UITabBar.appearance().standardAppearance = tab
         UITabBar.appearance().scrollEdgeAppearance = tab
 
-        func serif(_ size: CGFloat, _ weight: UIFont.Weight) -> UIFont {
-            let base = UIFont.systemFont(ofSize: size, weight: weight)
-            return UIFont(descriptor: base.fontDescriptor.withDesign(.serif) ?? base.fontDescriptor, size: size)
-        }
         let nav = UINavigationBarAppearance()
         nav.configureWithTransparentBackground()
         nav.backgroundColor = UIColor(Color.tgBackground)
-        nav.largeTitleTextAttributes = [.font: serif(34, .bold), .foregroundColor: rough]
-        nav.titleTextAttributes = [.font: serif(18, .semibold), .foregroundColor: rough]
+        nav.largeTitleTextAttributes = [.font: BrandFonts.uiFont(38, bold: true), .foregroundColor: rough]
+        nav.titleTextAttributes = [.font: BrandFonts.uiFont(21, bold: true), .foregroundColor: rough]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav

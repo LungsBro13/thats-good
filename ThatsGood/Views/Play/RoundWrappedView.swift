@@ -80,7 +80,7 @@ struct RoundWrappedView: View {
                 VStack(spacing: 14) {
                     progressBars(ink: palette.ink)
                     HStack {
-                        Text("ROUND WRAPPED").font(.caption.weight(.heavy)).tracking(2)
+                        Text("ROUND WRAPPED").font(.brandTitle(20, bold: true)).tracking(2.5)
                         Spacer()
                         Button(action: onFinish) {
                             Image(systemName: "xmark").font(.headline).frame(width: 44, height: 44)
