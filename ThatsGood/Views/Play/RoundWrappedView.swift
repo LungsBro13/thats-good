@@ -282,12 +282,13 @@ struct WrappedBackground: View {
             // A bunker, drifting gently, with the golfer standing beside it.
             Ellipse()
                 .fill(palette.bunker)
-                .frame(width: 240, height: 120)
+                .frame(width: 170, height: 84)
                 .rotationEffect(.degrees(drift ? -8 : -3))
-                .offset(x: 50, y: drift ? -118 : -110)
-            Golfer(style: palette.golfer, height: 150)
-                .padding(.trailing, 40)
-                .padding(.bottom, 150)
+                .offset(x: 40, y: drift ? -76 : -70)
+            // Kept small and low so he never covers the slide's text.
+            Golfer(style: palette.golfer, height: 90)
+                .padding(.trailing, 36)
+                .padding(.bottom, 96)
         }
         .ignoresSafeArea()
         .onAppear {
